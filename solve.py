@@ -6,6 +6,17 @@ from parser import (parse_string, Flag, Implication, NaryOperator)
 from replace_nary import (replace_nary, sort_nary)
 
 
+def reverse_constraints(constraint):
+    for expr in reversed(constraint):
+        if isinstance(expr, Flag):
+            yield expr
+        elif isinstance(expr, Implication):
+            yield Implication(expr.condition,
+                    list(reverse_constraints(expr.constraint)))
+        elif isinstance(expr, NaryOperator):
+            raise ValueError('N-ary operators should be collapsed already')
+
+
 def validate_constraint(flags, constraint):
     for expr in constraint:
         if isinstance(expr, Flag):
@@ -31,6 +42,11 @@ class ImmutabilityError(Exception):
     def __init__(self, flag_name):
         super(ImmutabilityError, self).__init__('Immutability error: value of %s mismatches' % flag_name)
         self.flag_name = flag_name
+
+
+class InfiniteLoopError(Exception):
+    def __init__(self, flag_name):
+        super(ImmutabilityError, self).__init__('Constraints cause infinite loop')
 
 
 def apply_solving(flags, constraint, conflict_dict, immutable_flags):
@@ -75,12 +91,60 @@ class immutability_sort(object):
             return 2
 
 
+def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
+    prev_states = [inp_flags]
+    out_flags = dict(inp_flags)
+    conflict_dict = {}
+    error = None
+    while True:
+        try:
+            try:
+                apply_solving(out_flags, ast, conflict_dict, immutable_flags)
+            except ConvergenceError as e:
+                if verbose:
+                    print('\033[31m [unsolvable: convergence error on %s]' % e.flag_name, end='')
+                raise
+            except ImmutabilityError as e:
+                if verbose:
+                    print('\033[31m [unsolvable: immutable %s mismatched]' % e.flag_name, end='')
+                raise
+            else:
+                valid_now = validate_constraint(out_flags, ast)
+                if verbose:
+                    if valid_now:
+                        print('\033[32m', end='')
+                    else:
+                        print('\033[33m', end='')
+                    for f in sorted_flags:
+                        print(' %d' % out_flags[f], end='')
+
+                if not valid_now:
+                    # compare with previous states
+                    for x in prev_states:
+                        if out_flags == x:
+                            if verbose:
+                                print('\033[31m [unsolvable due to loop]', end='')
+                            raise InfiniteLoopError()
+        finally:
+            if verbose:
+                print('\033[0m')
+
+        if valid_now:
+            return out_flags
+
+        prev_states.append(dict(out_flags))
+        if verbose:
+            print('%*s |' % (len(sorted_flags) * 2, ''), end='')
+
+
 def print_solutions(ast, immutable_flags):
     # sort n-ary expressions
     ast = sort_nary(ast, immutability_sort(immutable_flags))
     # convert to implication form
     ast = replace_nary(ast)
     ast = list(ast)
+    # provide a completely reversed variant for verification
+    rev_ast = list(reverse_constraints(ast))
     print(ast)
     print()
 
@@ -124,43 +188,31 @@ def print_solutions(ast, immutable_flags):
                 print(' %d' % inp_flags[f], end='')
             print(' (==)\033[0m')
         else:
-            prev_states = [inp_flags]
-            out_flags = dict(inp_flags)
-            conflict_dict = {}
-            while True:
+            try:
+                ret = do_solving(sorted_flags, inp_flags, ast, immutable_flags)
+            except (ImmutabilityError, ConvergenceError, InfiniteLoopError):
+                pass
+            else:
+                error = None
                 try:
-                    apply_solving(out_flags, ast, conflict_dict, immutable_flags)
-                except ConvergenceError as e:
-                    print('\033[31m [unsolvable: convergence error on %s]' % e.flag_name, end='')
-                    valid_now = True
+                    # verification pass: try with reversed AST
+                    ret2 = do_solving(sorted_flags, inp_flags, rev_ast, immutable_flags, False)
                 except ImmutabilityError as e:
-                    print('\033[31m [unsolvable: immutable %s mismatched]' % e.flag_name, end='')
-                    valid_now = True
+                    print('%*s |' % (len(sorted_flags) * 2, ''), end='')
+                    print('\033[31m[reverse failed: immutable %s mismatched\033[0m' % e.flag_name)
+                except ConvergenceError as e:
+                    print('%*s |' % (len(sorted_flags) * 2, ''), end='')
+                    print('\033[31m[reverse failed: convergence error on %s\033[0m' % e.flag_name)
+                except InfiniteLoopError:
+                    print('%*s |' % (len(sorted_flags) * 2, ''), end='')
+                    print('\033[31m[reverse failed: infinite loop\033[0m')
                 else:
-                    valid_now = validate_constraint(out_flags, ast)
-                    if valid_now:
-                        print('\033[32m', end='')
-                    else:
-                        print('\033[33m', end='')
-                    for f in sorted_flags:
-                        print(' %d' % out_flags[f], end='')
-
-                    if not valid_now:
-                        # compare with previous states
-                        for x in prev_states:
-                            if out_flags == x:
-                                print('\033[31m [unsolvable due to loop]', end='')
-                                # abort
-                                valid_now = True
-                                break
-
-                print('\033[0m')
-
-                if valid_now:
-                    break
-
-                prev_states.append(dict(out_flags))
-                print('%*s |' % (no_flags * 2, ''), end='')
+                    if ret != ret2:
+                        print('%*s |' % (len(sorted_flags) * 2, ''), end='')
+                        print('\033[35m', end='')
+                        for f in sorted_flags:
+                            print(' %d' % ret2[f], end='')
+                        print('\033[31m [non-repeatable result]\033[0m')
 
 
 def parse_immutables(s):
