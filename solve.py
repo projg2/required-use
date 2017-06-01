@@ -27,15 +27,23 @@ class ConvergenceError(Exception):
         self.flag_name = flag_name
 
 
-def apply_solving(flags, constraint, conflict_dict={}):
+class ImmutabilityError(Exception):
+    def __init__(self, flag_name):
+        super(ImmutabilityError, self).__init__('Immutability error: value of %s mismatches' % flag_name)
+        self.flag_name = flag_name
+
+
+def apply_solving(flags, constraint, conflict_dict, immutable_flags):
     for expr in constraint:
         if isinstance(expr, Flag):
+            if immutable_flags.get(expr.name, expr.enabled) != expr.enabled:
+                raise ImmutabilityError(expr.name)
             if conflict_dict.setdefault(expr.name, expr.enabled) != expr.enabled:
                 raise ConvergenceError(expr.name)
             flags[expr.name] = expr.enabled
         elif isinstance(expr, Implication):
             if flags[expr.condition.name] == expr.condition.enabled:
-                apply_solving(flags, expr.constraint, conflict_dict)
+                apply_solving(flags, expr.constraint, conflict_dict, immutable_flags)
         elif isinstance(expr, NaryOperator):
             raise NotImplementedError('N-ary operators not implemented')
 
@@ -51,7 +59,7 @@ def get_all_flags(ast):
             yield x
 
 
-def print_solutions(ast):
+def print_solutions(ast, immutable_flags):
     # convert to implication form
     ast = list(replace_nary(ast))
     print(ast)
@@ -73,8 +81,22 @@ def print_solutions(ast):
         inp_flags = {}
         for x in range(0, no_flags):
             inp_flags[sorted_flags[no_flags-x-1]] = bool(inpv & (2**x))
+
+        skip = False
+        for k, v in immutable_flags.items():
+            # skip mismatches for immutables
+            if inp_flags[k] != v:
+                skip = True
+                break
+        if skip:
+            continue
+
         for f in sorted_flags:
+            if f in immutable_flags:
+                print('\033[33m', end='')
             print(' %d' % inp_flags[f], end='')
+            if f in immutable_flags:
+                print('\033[0m', end='')
         print(' |', end='')
 
         if validate_constraint(inp_flags, ast):
@@ -88,9 +110,12 @@ def print_solutions(ast):
             conflict_dict = {}
             while True:
                 try:
-                    apply_solving(out_flags, ast, conflict_dict)
+                    apply_solving(out_flags, ast, conflict_dict, immutable_flags)
                 except ConvergenceError as e:
                     print('\033[31m [unsolvable: convergence error on %s]' % e.flag_name, end='')
+                    valid_now = True
+                except ImmutabilityError as e:
+                    print('\033[31m [unsolvable: immutable %s mismatched]' % e.flag_name, end='')
                     valid_now = True
                 else:
                     valid_now = validate_constraint(out_flags, ast)
@@ -119,5 +144,20 @@ def print_solutions(ast):
                 print('%*s |' % (no_flags * 2, ''), end='')
 
 
+def parse_immutables(s):
+    ret = {}
+    for x in s.split():
+        if x.startswith('!'):
+            ret[x[1:]] = False
+        else:
+            ret[x] = True
+    return ret
+
+
+def main(constraint_str, immutable_flag_str=''):
+    print_solutions(parse_string(constraint_str),
+            parse_immutables(immutable_flag_str))
+
+
 if __name__ == '__main__':
-    print_solutions(parse_string(sys.argv[1]))
+    main(*sys.argv[1:])
