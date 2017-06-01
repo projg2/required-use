@@ -9,7 +9,7 @@ from parser import (parse_string, Flag, Implication, NaryOperator,
 def nested_negations(constraint, final_constraint):
     val = final_constraint
     for v in reversed(constraint):
-        val = Implication(v.make_negated(), [val])
+        val = Implication(v.negated(), [val])
     return val
 
 
@@ -35,7 +35,7 @@ def replace_nary(ast):
                 # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
                 while len(constraint) > 1:
                     k = constraint.pop(0)
-                    yield Implication(k, [f.make_negated() for f in constraint])
+                    yield Implication(k, [f.negated() for f in constraint])
 
 
 if __name__ == '__main__':

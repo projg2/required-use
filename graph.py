@@ -62,9 +62,9 @@ def print_graph(ast):
     nodes = frozenset(get_nodes_from_flat_ast(ast))
     for n in nodes:
         # link nodes with their negations (if both present)
-        if not n.negated and n.make_negated() in nodes:
-            print('\t"%s" -> "%s" [color=red];' % (n.make_negated(), n))
-            print('\t"%s" -> "%s" [color=red];' % (n, n.make_negated()))
+        if n.enabled and n.negated() in nodes:
+            print('\t"%s" -> "%s" [color=red];' % (n.negated(), n))
+            print('\t"%s" -> "%s" [color=red];' % (n, n.negated()))
     print('}')
 
 

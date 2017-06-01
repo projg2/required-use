@@ -8,23 +8,23 @@ flag_re = re.compile(r'^[A-Za-z0-9][A-Za-z0-9+_@-]*$')
 
 
 class Flag(object):
-    def __init__(self, name, negated=False):
+    def __init__(self, name, enabled=True):
         if not flag_re.match(name):
             raise ValueError('Invalid flag name: %s' % name)
         self.name = name
-        self.negated = negated
+        self.enabled = enabled
 
     def __repr__(self):
-        return '%s%s' % ('!' if self.negated else '', self.name)
+        return '%s%s' % ('' if self.enabled else '!', self.name)
 
     def __hash__(self):
         return hash(repr(self))
 
     def __eq__(self, other):
-        return (self.name == other.name and self.negated == other.negated)
+        return (self.name == other.name and self.enabled == other.enabled)
 
-    def make_negated(self):
-        return Flag(self.name, not self.negated)
+    def negated(self):
+        return Flag(self.name, not self.enabled)
 
 
 class Implication(object):
@@ -82,7 +82,7 @@ def parse_tokens(l, nested=False):
                 assert k.endswith('?')
                 k = k[:-1]
                 if k.startswith('!'):
-                    kf = Flag(k[1:], True)
+                    kf = Flag(k[1:], False)
                 else:
                     kf = Flag(k)
                 yield Implication(kf, list(parse_tokens(l, True)))
@@ -96,7 +96,7 @@ def parse_tokens(l, nested=False):
         # plain flag
         else:
             if l[0].startswith('!'):
-                yield Flag(l[0][1:], True)
+                yield Flag(l[0][1:], False)
             else:
                 yield Flag(l[0])
             l.pop(0)
