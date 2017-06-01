@@ -17,6 +17,12 @@ class Flag(object):
     def __repr__(self):
         return '%s%s' % ('!' if self.negated else '', self.name)
 
+    def __hash__(self):
+        return hash(repr(self))
+
+    def __eq__(self, other):
+        return (self.name == other.name and self.negated == other.negated)
+
     def make_negated(self):
         return Flag(self.name, not self.negated)
 
