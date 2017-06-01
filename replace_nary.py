@@ -38,5 +38,18 @@ def replace_nary(ast):
                     yield Implication(k, [f.negated() for f in constraint])
 
 
+def sort_nary(ast, sort_key):
+    for expr in ast:
+        if isinstance(expr, Flag):
+            yield expr
+        elif isinstance(expr, Implication):
+            yield Implication(expr.condition, list(sort_nary(expr.constraint, sort_key)))
+        elif isinstance(expr, NaryOperator):
+            # sort subexpressions first, if any
+            constraint = list(sort_nary(expr.constraint, sort_key))
+            constraint.sort(key=sort_key)
+            yield expr.__class__(constraint)
+
+
 if __name__ == '__main__':
     print(repr(list(replace_nary(parse_string(sys.argv[1])))))

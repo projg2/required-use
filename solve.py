@@ -3,7 +3,7 @@
 import sys
 
 from parser import (parse_string, Flag, Implication, NaryOperator)
-from replace_nary import replace_nary
+from replace_nary import (replace_nary, sort_nary)
 
 
 def validate_constraint(flags, constraint):
@@ -59,9 +59,28 @@ def get_all_flags(ast):
             yield x
 
 
+class immutability_sort(object):
+    def __init__(self, immutable_flags):
+        self.immutable_flags = immutable_flags
+
+    def __call__(self, key):
+        # forced = 0 [go first]
+        # normal = 1
+        # masked = 2 [go last]
+        if key.name not in self.immutable_flags:
+            return 1
+        if self.immutable_flags[key.name]:
+            return 0
+        else:
+            return 2
+
+
 def print_solutions(ast, immutable_flags):
+    # sort n-ary expressions
+    ast = sort_nary(ast, immutability_sort(immutable_flags))
     # convert to implication form
-    ast = list(replace_nary(ast))
+    ast = replace_nary(ast)
+    ast = list(ast)
     print(ast)
     print()
 
