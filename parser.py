@@ -17,6 +17,9 @@ class Flag(object):
     def __repr__(self):
         return '%s%s' % ('!' if self.negated else '', self.name)
 
+    def make_negated(self):
+        return Flag(self.name, not self.negated)
+
 
 class Implication(object):
     def __init__(self, condition, constraint):
