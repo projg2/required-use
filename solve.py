@@ -81,7 +81,7 @@ def print_solutions(ast):
             print('\033[32m', end='')
             for f in sorted_flags:
                 print(' %d' % inp_flags[f], end='')
-            print(' (valid)\033[0m')
+            print(' (==)\033[0m')
         else:
             prev_states = [inp_flags]
             out_flags = dict(inp_flags)
