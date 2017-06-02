@@ -39,8 +39,8 @@ class ImmutabilityError(Exception):
 
 
 class InfiniteLoopError(Exception):
-    def __init__(self, flag_name):
-        super(ImmutabilityError, self).__init__('Constraints cause infinite loop')
+    def __init__(self):
+        super(InfiniteLoopError, self).__init__('Constraints cause infinite loop')
 
 
 def apply_solving(flags, constraint, immutable_flags):
