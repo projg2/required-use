@@ -32,12 +32,6 @@ def validate_constraint(flags, constraint):
     return True
 
 
-class ConvergenceError(Exception):
-    def __init__(self, flag_name):
-        super(ConvergenceError, self).__init__('Convergence error: conflicting values for %s' % flag_name)
-        self.flag_name = flag_name
-
-
 class ImmutabilityError(Exception):
     def __init__(self, flag_name):
         super(ImmutabilityError, self).__init__('Immutability error: value of %s mismatches' % flag_name)
@@ -49,17 +43,15 @@ class InfiniteLoopError(Exception):
         super(ImmutabilityError, self).__init__('Constraints cause infinite loop')
 
 
-def apply_solving(flags, constraint, conflict_dict, immutable_flags):
+def apply_solving(flags, constraint, immutable_flags):
     for expr in constraint:
         if isinstance(expr, Flag):
             if immutable_flags.get(expr.name, expr.enabled) != expr.enabled:
                 raise ImmutabilityError(expr.name)
-            if conflict_dict.setdefault(expr.name, expr.enabled) != expr.enabled:
-                raise ConvergenceError(expr.name)
             flags[expr.name] = expr.enabled
         elif isinstance(expr, Implication):
             if flags[expr.condition.name] == expr.condition.enabled:
-                apply_solving(flags, expr.constraint, conflict_dict, immutable_flags)
+                apply_solving(flags, expr.constraint, immutable_flags)
         elif isinstance(expr, NaryOperator):
             raise NotImplementedError('N-ary operators not implemented')
 
@@ -94,16 +86,11 @@ class immutability_sort(object):
 def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
     prev_states = [inp_flags]
     out_flags = dict(inp_flags)
-    conflict_dict = {}
     error = None
     while True:
         try:
             try:
-                apply_solving(out_flags, ast, conflict_dict, immutable_flags)
-            except ConvergenceError as e:
-                if verbose:
-                    print('\033[31m [unsolvable: convergence error on %s]' % e.flag_name, end='')
-                raise
+                apply_solving(out_flags, ast, immutable_flags)
             except ImmutabilityError as e:
                 if verbose:
                     print('\033[31m [unsolvable: immutable %s mismatched]' % e.flag_name, end='')
@@ -190,7 +177,7 @@ def print_solutions(ast, immutable_flags):
         else:
             try:
                 ret = do_solving(sorted_flags, inp_flags, ast, immutable_flags)
-            except (ImmutabilityError, ConvergenceError, InfiniteLoopError):
+            except (ImmutabilityError, InfiniteLoopError):
                 pass
             else:
                 error = None
@@ -200,9 +187,6 @@ def print_solutions(ast, immutable_flags):
                 except ImmutabilityError as e:
                     print('%*s |' % (len(sorted_flags) * 2, ''), end='')
                     print('\033[31m[reverse failed: immutable %s mismatched\033[0m' % e.flag_name)
-                except ConvergenceError as e:
-                    print('%*s |' % (len(sorted_flags) * 2, ''), end='')
-                    print('\033[31m[reverse failed: convergence error on %s\033[0m' % e.flag_name)
                 except InfiniteLoopError:
                     print('%*s |' % (len(sorted_flags) * 2, ''), end='')
                     print('\033[31m[reverse failed: infinite loop\033[0m')
