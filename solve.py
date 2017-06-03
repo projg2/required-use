@@ -17,11 +17,14 @@ def validate_constraint(flags, constraint):
                 if not validate_constraint(flags, expr.constraint):
                     return False
         elif isinstance(expr, AnyOfOperator):
-            return any(validate_constraint(flags, [x]) for x in expr.constraint)
+            if not any(validate_constraint(flags, [x]) for x in expr.constraint):
+                return False
         elif isinstance(expr, ExactlyOneOfOperator):
-            return list(validate_constraint(flags, [x]) for x in expr.constraint).count(True) == 1
+            if list(validate_constraint(flags, [x]) for x in expr.constraint).count(True) != 1:
+                return False
         elif isinstance(expr, AtMostOneOfOperator):
-            return list(validate_constraint(flags, [x]) for x in expr.constraint).count(True) <= 1
+            if list(validate_constraint(flags, [x]) for x in expr.constraint).count(True) > 1:
+                return False
 
     return True
 
