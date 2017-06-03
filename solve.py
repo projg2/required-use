@@ -86,7 +86,6 @@ class immutability_sort(object):
 def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
     prev_states = [inp_flags]
     out_flags = dict(inp_flags)
-    error = None
     while True:
         try:
             try:
@@ -179,24 +178,6 @@ def print_solutions(ast, immutable_flags):
                 ret = do_solving(sorted_flags, inp_flags, ast, immutable_flags)
             except (ImmutabilityError, InfiniteLoopError):
                 pass
-            else:
-                error = None
-                try:
-                    # verification pass: try with reversed AST
-                    ret2 = do_solving(sorted_flags, inp_flags, rev_ast, immutable_flags, False)
-                except ImmutabilityError as e:
-                    print('%*s |' % (len(sorted_flags) * 2, ''), end='')
-                    print('\033[31m[reverse failed: immutable %s mismatched\033[0m' % e.flag_name)
-                except InfiniteLoopError:
-                    print('%*s |' % (len(sorted_flags) * 2, ''), end='')
-                    print('\033[31m[reverse failed: infinite loop\033[0m')
-                else:
-                    if ret != ret2:
-                        print('%*s |' % (len(sorted_flags) * 2, ''), end='')
-                        print('\033[35m', end='')
-                        for f in sorted_flags:
-                            print(' %d' % ret2[f], end='')
-                        print('\033[31m [non-repeatable result]\033[0m')
 
 
 def parse_immutables(s):
