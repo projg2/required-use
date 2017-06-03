@@ -6,17 +6,6 @@ from parser import (parse_string, Flag, Implication, NaryOperator)
 from replace_nary import (replace_nary, sort_nary)
 
 
-def reverse_constraints(constraint):
-    for expr in reversed(constraint):
-        if isinstance(expr, Flag):
-            yield expr
-        elif isinstance(expr, Implication):
-            yield Implication(expr.condition,
-                    list(reverse_constraints(expr.constraint)))
-        elif isinstance(expr, NaryOperator):
-            raise ValueError('N-ary operators should be collapsed already')
-
-
 def validate_constraint(flags, constraint):
     for expr in constraint:
         if isinstance(expr, Flag):
@@ -102,7 +91,10 @@ def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
                     else:
                         print('\033[33m', end='')
                     for f in sorted_flags:
-                        print(' %d' % out_flags[f], end='')
+                        if out_flags[f] != prev_states[-1][f]:
+                            print(' \033[1m%d\033[22m' % out_flags[f], end='')
+                        else:
+                            print(' %d' % out_flags[f], end='')
 
                 if not valid_now:
                     # compare with previous states
@@ -129,8 +121,6 @@ def print_solutions(ast, immutable_flags):
     # convert to implication form
     ast = replace_nary(ast)
     ast = list(ast)
-    # provide a completely reversed variant for verification
-    rev_ast = list(reverse_constraints(ast))
     print(ast)
     print()
 
