@@ -2,8 +2,9 @@
 
 import sys
 
-from parser import (parse_string, Flag, Implication, NaryOperator)
-from replace_nary import (replace_nary, sort_nary)
+from parser import (parse_string, Flag, Implication,
+        AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator)
+from replace_nary import sort_nary
 
 
 def validate_constraint(flags, constraint):
@@ -15,8 +16,12 @@ def validate_constraint(flags, constraint):
             if flags[expr.condition.name] == expr.condition.enabled:
                 if not validate_constraint(flags, expr.constraint):
                     return False
-        elif isinstance(expr, NaryOperator):
-            raise NotImplementedError('N-ary operators not implemented')
+        elif isinstance(expr, AnyOfOperator):
+            return any(validate_constraint(flags, [x]) for x in expr.constraint)
+        elif isinstance(expr, ExactlyOneOfOperator):
+            return list(validate_constraint(flags, [x]) for x in expr.constraint).count(True) == 1
+        elif isinstance(expr, AtMostOneOfOperator):
+            return list(validate_constraint(flags, [x]) for x in expr.constraint).count(True) <= 1
 
     return True
 
@@ -32,17 +37,33 @@ class InfiniteLoopError(Exception):
         super(InfiniteLoopError, self).__init__('Constraints cause infinite loop')
 
 
-def apply_solving(flags, constraint, immutable_flags):
+def apply_solving(flags, constraint, immutable_flags, negate=False):
     for expr in constraint:
         if isinstance(expr, Flag):
-            if immutable_flags.get(expr.name, expr.enabled) != expr.enabled:
+            want = expr.enabled
+            if negate:
+                want = not want
+            if immutable_flags.get(expr.name, want) != want:
                 raise ImmutabilityError(expr.name)
-            flags[expr.name] = expr.enabled
+            flags[expr.name] = want
         elif isinstance(expr, Implication):
             if flags[expr.condition.name] == expr.condition.enabled:
-                apply_solving(flags, expr.constraint, immutable_flags)
-        elif isinstance(expr, NaryOperator):
-            raise NotImplementedError('N-ary operators not implemented')
+                apply_solving(flags, expr.constraint, immutable_flags, negate)
+        elif isinstance(expr, AnyOfOperator):
+            if not validate_constraint(flags, [expr]):
+                apply_solving(flags, expr.constraint[0:1], immutable_flags, negate)
+        elif isinstance(expr, ExactlyOneOfOperator):
+            apply_solving(flags, [AnyOfOperator(expr.constraint)], immutable_flags, negate)
+            apply_solving(flags, [AtMostOneOfOperator(expr.constraint)], immutable_flags, negate)
+        elif isinstance(expr, AtMostOneOfOperator):
+            if not validate_constraint(flags, [expr]):
+                past_first = False
+                for x in expr.constraint:
+                    if validate_constraint(flags, [x]):
+                        if past_first:
+                            apply_solving(flags, [x], immutable_flags, not negate)
+                        else:
+                            past_first = True
 
 
 def get_all_flags(ast):
@@ -118,8 +139,6 @@ def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
 def print_solutions(ast, immutable_flags):
     # sort n-ary expressions
     ast = sort_nary(ast, immutability_sort(immutable_flags))
-    # convert to implication form
-    ast = replace_nary(ast)
     ast = list(ast)
     print(ast)
     print()
