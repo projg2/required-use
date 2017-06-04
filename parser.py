@@ -37,6 +37,30 @@ class Implication(object):
     def __repr__(self):
         return '%s? => %s' % (self.condition, self.constraint)
 
+    def can_break(self, other):
+        # 1.The conditions are compatible: No p_i is the negation of a p'_j.
+        for p in other.condition:
+            for pp in self.condition:
+                if p == pp.negated(): return False
+        # 2.Solving the 1st does not make the 2nd trivially true: No q_i is
+        # the negation of a p'_j.
+        for q in other.constraint:
+            for pp in self.condition:
+                if q == pp.negated(): return False
+        # 3.Solving the 2nd does not make the 1st trivially true afterwards: No
+        # p_i is the negation of a q'_j.
+        for p in other.condition:
+            for qp in self.constraint:
+                if p == qp.negated(): return False
+        # 4.Solving the 2nd does break the 1st assumption: (A q_i is
+        # the negation of a q_'j) or (a q'_j is some p_i and one of q_1 ... q_m
+        #  might be false).
+        for qp in self.constraint:
+            for q in other.constraint:
+                if qp == q.negated(): return True
+            for p in other.condition:
+                if p == qp: return True
+        return False
 
 class NaryOperator(object):
     def __init__(self, op, constraint):
