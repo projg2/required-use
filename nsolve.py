@@ -6,6 +6,7 @@ from parser import (parse_string, Flag, Implication,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator)
 from replace_nary import sort_nary, replace_nary
 from flatten_implications import flatten_implications
+from toposort import toposort, toposort_flatten
 
 
 def validate_constraint(flags, constraint):
@@ -207,7 +208,12 @@ def main(constraint_str, immutable_flag_str=''):
     cons = parse_string(constraint_str)
     nary = replace_nary(cons)
     flat = list(flatten_implications(nary))
-    print(flat)
+    print("Original: %s"%flat)
+    for i in flat:
+        i.fill_can_break(flat)
+    x = toposort_flatten({ x : set(x.edges) for x in flat })
+    print("Toposorted: %s"%x)
+
     for i in range(len(flat)):
         for j in range(i+1,len(flat)):
             cb = flat[j].can_break(flat[i])

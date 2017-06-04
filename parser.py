@@ -62,6 +62,14 @@ class Implication(object):
                 if p == qp: return True
         return False
 
+    def fill_can_break(self, list_impl):
+        self.edges = []
+        for i in list_impl:
+            if i == self: continue
+            if self.can_break(i): self.edges.append(i)
+
+    def __lt__(self, other): return str(self) < str(other)
+
 class NaryOperator(object):
     def __init__(self, op, constraint):
         assert op in ('||', '??', '^^', '&&')
