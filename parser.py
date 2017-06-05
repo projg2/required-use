@@ -59,7 +59,14 @@ class Implication(object):
             for q in other.constraint:
                 if qp == q.negated(): return True
             for p in other.condition:
-                if p == qp: return True
+                if p == qp:
+                    # If {q_i} is a subset of {p'_i}U{q'_i} then the 1st is trivially
+                    # true if we apply the 2nd, so it does not break it.
+                    trivial=True
+                    for p in other.constraint:
+                        if p not in self.condition and p not in self.constraint:
+                            trivial=False
+                    return not trivial
         return False
 
     def fill_can_break(self, list_impl):
