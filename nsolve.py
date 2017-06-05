@@ -221,6 +221,7 @@ def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
     except:
         cyclic[pkg]=constraint_str
         if reraise: raise
+        return
 
     for i in range(len(flat)):
         for j in range(i+1,len(flat)):
