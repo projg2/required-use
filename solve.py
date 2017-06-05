@@ -3,7 +3,8 @@
 import sys
 
 from parser import (parse_string, Flag, Implication, AllOfOperator,
-        AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator)
+        AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
+        NaryOperator)
 from replace_nary import sort_nary
 
 
@@ -90,6 +91,14 @@ class immutability_sort(object):
         self.immutable_flags = immutable_flags
 
     def __call__(self, key):
+        # support recurrence into n-ary operators
+        if isinstance(key, NaryOperator):
+            for x in key.constraint:
+                if self(x) != 1:
+                    return self(x)
+            else:
+                return 1
+
         # forced = 0 [go first]
         # normal = 1
         # masked = 2 [go last]
