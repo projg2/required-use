@@ -3,7 +3,8 @@
 import sys
 
 from parser import (parse_string, Flag, Implication, NaryOperator,
-        AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator)
+        AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
+        AllOfOperator)
 
 
 def nested_negations(constraint, final_constraint):
@@ -22,6 +23,10 @@ def replace_nary(ast):
         elif isinstance(expr, NaryOperator):
             # replace subexpressions first, if any
             constraint = list(replace_nary(expr.constraint))
+            if isinstance(expr, AllOfOperator):
+                for x in expr.constraint:
+                    yield x
+                continue
             for subexpr in constraint:
                 if not isinstance(subexpr, Flag):
                     raise NotImplementedError('Nested operators not supported')
@@ -44,6 +49,9 @@ def sort_nary(ast, sort_key):
             yield expr
         elif isinstance(expr, Implication):
             yield Implication(expr.condition, list(sort_nary(expr.constraint, sort_key)))
+        elif isinstance(expr, AllOfOperator):
+            # no point in sorting all-of
+            yield expr
         elif isinstance(expr, NaryOperator):
             # sort subexpressions first, if any
             constraint = list(sort_nary(expr.constraint, sort_key))

@@ -39,7 +39,7 @@ class Implication(object):
 
 class NaryOperator(object):
     def __init__(self, op, constraint):
-        assert op in ('||', '??', '^^')
+        assert op in ('||', '??', '^^', '&&')
         self.op = op
         self.constraint = constraint
 
@@ -62,14 +62,20 @@ class AtMostOneOfOperator(NaryOperator):
         super(AtMostOneOfOperator, self).__init__('??', constraint)
 
 
+class AllOfOperator(NaryOperator):
+    def __init__(self, constraint):
+        super(AllOfOperator, self).__init__('&&', constraint)
+
+
 def parse_tokens(l, nested=False):
     while l:
         # implication or n-ary operator
-        if l[0] in ('||', '??', '^^') or l[0].endswith('?'):
-            if l[1] != '(':
+        if l[0] in ('||', '??', '^^', '(') or l[0].endswith('?'):
+            if '(' not in l[0:2]:
                 raise ValueError('"%s" must be followed by "("' % l[0])
             k = l.pop(0)
-            l.pop(0)
+            if k != '(':
+                l.pop(0)
 
             if k == '||':
                 yield AnyOfOperator(list(parse_tokens(l, True)))
@@ -77,6 +83,8 @@ def parse_tokens(l, nested=False):
                 yield AtMostOneOfOperator(list(parse_tokens(l, True)))
             elif k == '^^':
                 yield ExactlyOneOfOperator(list(parse_tokens(l, True)))
+            elif k == '(':
+                yield AllOfOperator(list(parse_tokens(l, True)))
             else:
                 # strip ?
                 assert k.endswith('?')

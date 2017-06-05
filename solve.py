@@ -2,7 +2,7 @@
 
 import sys
 
-from parser import (parse_string, Flag, Implication,
+from parser import (parse_string, Flag, Implication, AllOfOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator)
 from replace_nary import sort_nary
 
@@ -24,6 +24,9 @@ def validate_constraint(flags, constraint):
                 return False
         elif isinstance(expr, AtMostOneOfOperator):
             if list(validate_constraint(flags, [x]) for x in expr.constraint).count(True) > 1:
+                return False
+        elif isinstance(expr, AllOfOperator):
+            if not all(validate_constraint(flags, [x]) for x in expr.constraint):
                 return False
 
     return True
@@ -67,6 +70,8 @@ def apply_solving(flags, constraint, immutable_flags, negate=False):
                             apply_solving(flags, [x], immutable_flags, not negate)
                         else:
                             past_first = True
+        elif isinstance(expr, AllOfOperator):
+            apply_solving(flags, expr.constraint, immutable_flags, negate)
 
 
 def get_all_flags(ast):
