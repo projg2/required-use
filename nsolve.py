@@ -204,22 +204,32 @@ def parse_immutables(s):
     return ret
 
 
-def main(constraint_str, immutable_flag_str=''):
+def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
+        good={}, need_topo_sort={}, cyclic={}, reraise=True):
     cons = parse_string(constraint_str)
     nary = replace_nary(cons)
-    flat = list(flatten_implications(nary))
-    print("Original: %s"%flat)
+    try:
+        flat = list(flatten_implications(nary))
+    except:
+        parse_error[pkg]=constraint_str
+        if reraise: raise
+        return
     for i in flat:
         i.fill_can_break(flat)
-    x = toposort_flatten({ x : set(x.edges) for x in flat })
-    print("Toposorted: %s"%x)
+    try:
+        x = toposort_flatten({ x : set(x.edges) for x in flat })
+    except:
+        cyclic[pkg]=constraint_str
+        if reraise: raise
 
     for i in range(len(flat)):
         for j in range(i+1,len(flat)):
             cb = flat[j].can_break(flat[i])
             if cb:
-                print("[%s] can break [%s]"%(flat[j],flat[i]))
+                need_topo_sort[pkg] = constraint_str
+                return
+    good[pkg]=constraint_str
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    solve(*sys.argv[1:])
