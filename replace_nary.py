@@ -15,9 +15,13 @@ def replace_nary(ast):
         elif isinstance(expr, Implication):
             yield Implication(expr.condition, list(replace_nary(expr.constraint)))
         elif isinstance(expr, AllOfOperator):
-            assert expr.enabled
-            for x in expr.constraint:
-                yield x
+            if expr.enabled:
+                for x in expr.constraint:
+                    yield x
+            else:
+                # !&& [a b..] -> [a b..]? => [!a !b..]
+                yield Implication(expr.constraint,
+                        [x.negated() for x in expr.constraint])
         elif isinstance(expr, NaryOperator):
             # replace subexpressions first, if any
             constraint = list(expr.constraint)
