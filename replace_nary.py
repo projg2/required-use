@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import itertools
 import sys
 
 from parser import (parse_string, Flag, Implication, NaryOperator,
@@ -14,13 +15,14 @@ def replace_nary(ast):
         elif isinstance(expr, Implication):
             yield Implication(expr.condition, list(replace_nary(expr.constraint)))
         elif isinstance(expr, AllOfOperator):
+            assert expr.enabled
             for x in expr.constraint:
                 yield x
         elif isinstance(expr, NaryOperator):
             # replace subexpressions first, if any
             constraint = list(expr.constraint)
             for subexpr in constraint:
-                if not isinstance(subexpr, Flag):
+                if not isinstance(subexpr, Flag) and not isinstance(subexpr, AllOfOperator):
                     raise NotImplementedError('Nested operators not supported')
             # then replace the expression itself
             if isinstance(expr, AnyOfOperator) or isinstance(expr, ExactlyOneOfOperator):
@@ -36,6 +38,45 @@ def replace_nary(ast):
                 while len(constraint) > 1:
                     k = constraint.pop(0)
                     yield Implication([k], [f.negated() for f in constraint])
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
+
+
+def expand_conditions(expr):
+    for subexpr in expr:
+        if isinstance(subexpr, Flag):
+            yield [subexpr]
+        elif isinstance(subexpr, AllOfOperator):
+            yield (x.negated() for x in subexpr.constraint)
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
+
+
+def replace_allof(ast):
+    for expr in ast:
+        if isinstance(expr, Flag):
+            yield expr
+        elif isinstance(expr, Implication):
+            condition = expr.condition
+            constraint = list(replace_nary(expr.constraint))
+
+            if any(isinstance(x, AllOfOperator) for x in condition):
+                if all(x.enabled for x in condition):
+                    yield Implication(list(replace_nary(condition)), constraint)
+                else:
+                    if any(x.enabled for x in condition):
+                        raise NotImplementedError(
+                                'Only pure negative or pure positive implication conditions supported')
+
+                    # we need to replace !(a && b && c) -> !a || !b || !c
+                    # per de Morgan's law, then convert to CNF
+                    # (!a || !b) && (!c || !d) -> (!a && !c) || (!a && !d) || ...
+                    for cset in itertools.product(*expand_conditions(condition)):
+                        yield Implication(list(cset), list(constraint))
+            else:
+                yield Implication(condition, constraint)
+        elif isinstance(expr, NaryOperator):
+            raise ValueError('Flat n-ary operators should be replaced already')
         else:
             raise ValueError('Unknown AST expr: %s' % expr)
 
@@ -59,4 +100,4 @@ def sort_nary(ast, sort_key):
 
 
 if __name__ == '__main__':
-    print(repr(list(replace_nary(parse_string(sys.argv[1])))))
+    print(repr(list(replace_allof(replace_nary(parse_string(sys.argv[1]))))))

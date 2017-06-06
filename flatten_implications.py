@@ -3,7 +3,7 @@
 import sys
 
 from parser import (parse_string, Flag, Implication, NaryOperator)
-from replace_nary import replace_nary
+from replace_nary import replace_nary, replace_allof
 
 
 def flatten_implications(ast, current_implications=[]):
@@ -21,4 +21,4 @@ def flatten_implications(ast, current_implications=[]):
 
 
 if __name__ == '__main__':
-    print(repr(list(flatten_implications(replace_nary(parse_string(sys.argv[1]))))))
+    print(repr(list(flatten_implications(replace_allof(replace_nary(parse_string(sys.argv[1])))))))

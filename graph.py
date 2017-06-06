@@ -4,7 +4,7 @@ import sys
 
 from flatten_implications import flatten_implications
 from parser import (parse_string, Flag, Implication, NaryOperator)
-from replace_nary import replace_nary
+from replace_nary import replace_nary, replace_allof
 
 
 def get_edges_from_flat_ast(ast):
@@ -57,4 +57,4 @@ def print_graph(ast):
 
 
 if __name__ == '__main__':
-    print_graph(flatten_implications(replace_nary(parse_string(sys.argv[1]))))
+    print_graph(flatten_implications(replace_allof(replace_nary(parse_string(sys.argv[1])))))

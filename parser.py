@@ -64,8 +64,16 @@ class AtMostOneOfOperator(NaryOperator):
 
 
 class AllOfOperator(NaryOperator):
-    def __init__(self, constraint):
+    def __init__(self, constraint, enabled=True):
         super(AllOfOperator, self).__init__('&&', constraint)
+        self.enabled = enabled
+
+    def __repr__(self):
+        return '%s%s' % ('' if self.enabled else '!',
+                super(AllOfOperator, self).__repr__())
+
+    def negated(self):
+        return AllOfOperator(self.constraint, not self.enabled)
 
 
 def parse_tokens(l, nested=False):
