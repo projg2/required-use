@@ -7,38 +7,18 @@ from parser import (parse_string, Flag, Implication, NaryOperator)
 from replace_nary import replace_nary
 
 
-def get_edges_for_nested_implications(impl):
-    conditions = set()
-    v = impl
-    while isinstance(v, Implication):
-        assert(len(v.constraint) == 1)
-        assert(len(v.condition) == 1)
-        conditions.add(v.condition[0])
-        v = v.constraint[0]
-    for c in conditions:
-        yield (c, v)
-
-
 def get_edges_from_flat_ast(ast):
     for expr in ast:
         # skip stand-alone flags
         if isinstance(expr, Flag):
             continue
         elif isinstance(expr, Implication):
-            for e in get_edges_for_nested_implications(expr):
-                yield e
+            assert(len(expr.constraint) == 1)
+            for x in expr.condition:
+                assert(isinstance(x, Flag))
+                yield (x, expr.constraint[0])
         elif isinstance(expr, NaryOperator):
             raise ValueError('N-ary operators should be replaced already')
-
-
-def get_nodes_for_nested_implications(impl):
-    v = impl
-    while isinstance(v, Implication):
-        assert(len(v.constraint) == 1)
-        assert(len(v.condition) == 1)
-        yield v.condition[0]
-        v = v.constraint[0]
-    yield v
 
 
 def get_nodes_from_flat_ast(ast):
@@ -47,8 +27,10 @@ def get_nodes_from_flat_ast(ast):
         if isinstance(expr, Flag):
             continue
         elif isinstance(expr, Implication):
-            for n in get_nodes_for_nested_implications(expr):
-                yield n
+            for x in expr.condition:
+                yield x
+            for x in expr.constraint:
+                yield x
         elif isinstance(expr, NaryOperator):
             raise ValueError('N-ary operators should be replaced already')
 
