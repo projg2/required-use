@@ -12,7 +12,8 @@ def get_edges_for_nested_implications(impl):
     v = impl
     while isinstance(v, Implication):
         assert(len(v.constraint) == 1)
-        conditions.add(v.condition)
+        assert(len(v.condition) == 1)
+        conditions.add(v.condition[0])
         v = v.constraint[0]
     for c in conditions:
         yield (c, v)
@@ -34,7 +35,8 @@ def get_nodes_for_nested_implications(impl):
     v = impl
     while isinstance(v, Implication):
         assert(len(v.constraint) == 1)
-        yield v.condition
+        assert(len(v.condition) == 1)
+        yield v.condition[0]
         v = v.constraint[0]
     yield v
 

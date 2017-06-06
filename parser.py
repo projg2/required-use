@@ -29,7 +29,8 @@ class Flag(object):
 
 class Implication(object):
     def __init__(self, condition, constraint):
-        assert isinstance(condition, Flag)
+        assert(isinstance(condition, list))
+        assert(isinstance(constraint, list))
         self.condition = condition
         self.constraint = constraint
 
@@ -93,7 +94,7 @@ def parse_tokens(l, nested=False):
                     kf = Flag(k[1:], False)
                 else:
                     kf = Flag(k)
-                yield Implication(kf, list(parse_tokens(l, True)))
+                yield Implication([kf], list(parse_tokens(l, True)))
                 
         # end of group
         elif l[0] == ')':

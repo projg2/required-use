@@ -9,7 +9,7 @@ from replace_nary import replace_nary
 def nested_implications(conditions, final_constraint):
     val = final_constraint
     for v in reversed(conditions):
-        val = Implication(v, [val])
+        val = Implication([v], [val])
     return val
 
 
@@ -19,7 +19,7 @@ def flatten_implications(ast, current_implications=[]):
             yield nested_implications(current_implications, expr)
         elif isinstance(expr, Implication):
             for x in flatten_implications(expr.constraint,
-                    current_implications + [expr.condition]):
+                    current_implications + expr.condition):
                 yield x
         elif isinstance(expr, NaryOperator):
             raise ValueError('N-ary operators should be replaced already')
