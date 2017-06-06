@@ -14,8 +14,7 @@ def validate_constraint(flags, constraint):
             if flags[expr.name] != expr.enabled:
                 return False
         elif isinstance(expr, Implication):
-            assert(len(expr.condition) == 1)
-            if flags[expr.condition[0].name] == expr.condition[0].enabled:
+            if validate_constraint(flags, expr.condition):
                 if not validate_constraint(flags, expr.constraint):
                     return False
         elif isinstance(expr, AnyOfOperator):
@@ -55,8 +54,7 @@ def apply_solving(flags, constraint, immutable_flags, negate=False):
                 raise ImmutabilityError(expr.name)
             flags[expr.name] = want
         elif isinstance(expr, Implication):
-            assert(len(expr.condition) == 1)
-            if flags[expr.condition[0].name] == expr.condition[0].enabled:
+            if validate_constraint(flags, expr.condition):
                 apply_solving(flags, expr.constraint, immutable_flags, negate)
         elif isinstance(expr, AnyOfOperator):
             if not validate_constraint(flags, [expr]):
