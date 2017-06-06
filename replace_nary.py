@@ -13,13 +13,12 @@ def replace_nary(ast):
             yield expr
         elif isinstance(expr, Implication):
             yield Implication(expr.condition, list(replace_nary(expr.constraint)))
+        elif isinstance(expr, AllOfOperator):
+            for x in expr.constraint:
+                yield x
         elif isinstance(expr, NaryOperator):
             # replace subexpressions first, if any
-            constraint = list(replace_nary(expr.constraint))
-            if isinstance(expr, AllOfOperator):
-                for x in expr.constraint:
-                    yield x
-                continue
+            constraint = list(expr.constraint)
             for subexpr in constraint:
                 if not isinstance(subexpr, Flag):
                     raise NotImplementedError('Nested operators not supported')
