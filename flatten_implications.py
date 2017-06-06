@@ -16,6 +16,8 @@ def flatten_implications(ast, current_implications=[]):
                 yield x
         elif isinstance(expr, NaryOperator):
             raise ValueError('N-ary operators should be replaced already')
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
 
 
 if __name__ == '__main__':

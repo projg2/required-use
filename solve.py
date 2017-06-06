@@ -29,6 +29,8 @@ def validate_constraint(flags, constraint):
         elif isinstance(expr, AllOfOperator):
             if not all(validate_constraint(flags, [x]) for x in expr.constraint):
                 return False
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
 
     return True
 
@@ -73,6 +75,8 @@ def apply_solving(flags, constraint, immutable_flags, negate=False):
                             past_first = True
         elif isinstance(expr, AllOfOperator):
             apply_solving(flags, expr.constraint, immutable_flags, negate)
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
 
 
 def get_all_flags(ast):

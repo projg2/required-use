@@ -19,6 +19,8 @@ def get_edges_from_flat_ast(ast):
                 yield (x, expr.constraint[0])
         elif isinstance(expr, NaryOperator):
             raise ValueError('N-ary operators should be replaced already')
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
 
 
 def get_nodes_from_flat_ast(ast):
@@ -33,6 +35,8 @@ def get_nodes_from_flat_ast(ast):
                 yield x
         elif isinstance(expr, NaryOperator):
             raise ValueError('N-ary operators should be replaced already')
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
 
 
 def print_graph(ast):

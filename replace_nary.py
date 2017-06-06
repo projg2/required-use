@@ -37,6 +37,8 @@ def replace_nary(ast):
                 while len(constraint) > 1:
                     k = constraint.pop(0)
                     yield Implication([k], [f.negated() for f in constraint])
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
 
 
 def sort_nary(ast, sort_key):
@@ -53,6 +55,8 @@ def sort_nary(ast, sort_key):
             constraint = list(sort_nary(expr.constraint, sort_key))
             constraint.sort(key=sort_key)
             yield expr.__class__(constraint)
+        else:
+            raise ValueError('Unknown AST expr: %s' % expr)
 
 
 if __name__ == '__main__':
