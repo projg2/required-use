@@ -3,7 +3,7 @@
 import sys
 
 from parser import parse_string
-from replace_nary import sort_nary, replace_nary
+from replace_nary import sort_nary, replace_nary, replace_allof
 from flatten_implications import flatten_implications
 from toposort import toposort, toposort_flatten
 
@@ -21,7 +21,7 @@ def parse_immutables(s):
 def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
         good={}, need_topo_sort={}, cyclic={}, reraise=True):
     cons = parse_string(constraint_str)
-    nary = replace_nary(cons)
+    nary = replace_allof(replace_nary(cons))
     immutable_flags = parse_immutables(immutable_flag_str)
     if immutable_flags:
         raise NotImplementedError('Immutables are not implemented yet')
