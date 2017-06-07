@@ -66,7 +66,7 @@ def replace_allof(ast):
             yield expr
         elif isinstance(expr, Implication):
             condition = expr.condition
-            constraint = list(replace_nary(expr.constraint))
+            constraint = list(replace_allof(expr.constraint))
 
             if any(isinstance(x, AllOfOperator) for x in condition):
                 if all(x.enabled for x in condition):
