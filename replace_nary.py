@@ -30,7 +30,7 @@ def replace_nary(ast):
                     raise NotImplementedError('Nested operators not supported')
             # then replace the expression itself
             if isinstance(expr, AnyOfOperator) or isinstance(expr, ExactlyOneOfOperator):
-                # || ( a b c ... ) -> [!b !c !...]? ( a )
+                # || ( a b c ... ) -> [!a !b !c !...]? ( a )
                 # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
                 if len(constraint) == 1:
                     if isinstance(constraint[0], AllOfOperator):
@@ -39,7 +39,7 @@ def replace_nary(ast):
                     else:
                         yield constraint[0]
                 else:
-                    yield Implication([v.negated() for v in constraint[1:]], constraint[0:1])
+                    yield Implication([v.negated() for v in constraint], constraint[0:1])
             if isinstance(expr, AtMostOneOfOperator) or isinstance(expr, ExactlyOneOfOperator):
                 # ?? ( a b c ... ) -> a? ( !b !c ... ) b? ( !c ... ) ...
                 # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
