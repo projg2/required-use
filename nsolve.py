@@ -208,6 +208,9 @@ def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
         good={}, need_topo_sort={}, cyclic={}, reraise=True):
     cons = parse_string(constraint_str)
     nary = replace_nary(cons)
+    immutable_flags = parse_immutables(immutable_flag_str)
+    if immutable_flags:
+        raise NotImplementedError('Immutables are not implemented yet')
     try:
         flat = list(flatten_implications(nary))
     except:
