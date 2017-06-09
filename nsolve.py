@@ -19,7 +19,7 @@ def parse_immutables(s):
 
 
 def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
-        good={}, need_topo_sort={}, cyclic={}, reraise=True):
+        good={}, need_topo_sort={}, cyclic={}, reraise=True, print_status=False):
     cons = parse_string(constraint_str)
     nary = replace_allof(replace_nary(cons))
     immutable_flags = parse_immutables(immutable_flag_str)
@@ -37,6 +37,7 @@ def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
         x = toposort_flatten({ x : set(x.edges) for x in flat })
     except:
         cyclic[pkg]=constraint_str
+        if(print_status): print("'%s' is cyclic"%constraint_str)
         if reraise: raise
         return
 
@@ -45,7 +46,9 @@ def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
             cb = flat[j].can_break(flat[i])
             if cb:
                 need_topo_sort[pkg] = constraint_str
+                if(print_status): print("'%s' needs sorting"%constraint_str)
                 return
+    if(print_status): print("'%s' is all good"%constraint_str)
     good[pkg]=constraint_str
 
 
@@ -65,4 +68,4 @@ def test():
 
 if __name__ == '__main__':
     if(len(sys.argv)<=1): test()
-    else: solve(*sys.argv[1:])
+    else: solve(*sys.argv[1:], print_status=True)
