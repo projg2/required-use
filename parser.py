@@ -37,6 +37,12 @@ class Implication(object):
     def __repr__(self):
         return '%s? => %s' % (self.condition, self.constraint)
 
+    def negated(self):
+        # lhs? => rhs is only false if lhs is true and rhs is false
+        # TODO: we do not support proper negations on RHS
+        assert len(self.constraint) == 1
+        return AllOfOperator(self.condition + [self.constraint[0].negated()])
+
     def can_break(self, other):
         # 1.The conditions are compatible: No p_i is the negation of a p'_j.
         for p in other.condition:
