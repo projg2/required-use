@@ -49,5 +49,20 @@ def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
     good[pkg]=constraint_str
 
 
+def basic_test():
+    m={}
+    solve("a? ( b ) b? ( a )", good=m, reraise=False)
+    assert(len(m)>0)
+    m={}
+    solve("a? ( !b ) b? ( a )", good=m, reraise=False)
+    assert(len(m)>0)
+    m={}
+    solve("a? ( b ) c? ( a )", need_topo_sort=m, reraise=False)
+    assert(len(m)>0)
+
+def test():
+    basic_test()
+
 if __name__ == '__main__':
-    solve(*sys.argv[1:])
+    if(len(sys.argv)<=1): test()
+    else: solve(*sys.argv[1:])
