@@ -8,14 +8,6 @@ from parser import (parse_string, Flag, Implication, NaryOperator,
         AllOfOperator)
 
 
-def replace_nary_rec(expr):
-    repl = list(replace_nary([expr]))
-    if len(repl) == 1:
-        return repl[0]
-    else:
-        return AllOfOperator(repl)
-
-
 def replace_nary(ast):
     for expr in ast:
         if isinstance(expr, Flag):
@@ -32,7 +24,10 @@ def replace_nary(ast):
                         [x.negated() for x in expr.constraint])
         elif isinstance(expr, NaryOperator):
             # replace subexpressions first, if any
-            constraint = [replace_nary_rec(x) for x in expr.constraint]
+            constraint = list(expr.constraint)
+            for subexpr in constraint:
+                if not isinstance(subexpr, Flag) and not isinstance(subexpr, AllOfOperator):
+                    raise NotImplementedError('Nested operators not supported')
             # then replace the expression itself
             if isinstance(expr, AnyOfOperator) or isinstance(expr, ExactlyOneOfOperator):
                 # || ( a b c ... ) -> [!a !b !c !...]? ( a )
@@ -44,13 +39,13 @@ def replace_nary(ast):
                     else:
                         yield constraint[0]
                 else:
-                    yield Implication(list(replace_nary([v.negated() for v in constraint])), constraint[0:1])
+                    yield Implication([v.negated() for v in constraint], constraint[0:1])
             if isinstance(expr, AtMostOneOfOperator) or isinstance(expr, ExactlyOneOfOperator):
                 # ?? ( a b c ... ) -> a? ( !b !c ... ) b? ( !c ... ) ...
                 # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
                 while len(constraint) > 1:
                     k = constraint.pop(0)
-                    yield Implication([k], list(replace_nary([f.negated() for f in constraint])))
+                    yield Implication([k], [f.negated() for f in constraint])
         else:
             raise ValueError('Unknown AST expr: %s' % expr)
 
