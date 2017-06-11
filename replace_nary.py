@@ -7,6 +7,15 @@ from parser import (parse_string, Flag, Implication, NaryOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
         AllOfOperator)
 
+def negate(expr):
+    if isinstance(expr, Flag):
+        return expr.negated()
+    elif isinstance(expr, AllOfOperator):
+        return AnyOfOperator([negate(x) for x in expr.constraint])
+    elif isinstance(expr, AnyOfOperator):
+        return AllOfOperator([negate(x) for x in expr.constraint])
+    else:
+        raise ValueError('Invalid expr for negate: %s' % expr)
 
 def replace_nary(ast):
     for expr in ast:
@@ -14,38 +23,25 @@ def replace_nary(ast):
             yield expr
         elif isinstance(expr, Implication):
             yield Implication(expr.condition, list(replace_nary(expr.constraint)))
-        elif isinstance(expr, AllOfOperator):
-            if expr.enabled:
-                for x in expr.constraint:
-                    yield x
-            else:
-                # !&& [a b..] -> [a b..]? => [!a !b..]
-                yield Implication(expr.constraint,
-                        [x.negated() for x in expr.constraint])
         elif isinstance(expr, NaryOperator):
             # replace subexpressions first, if any
-            constraint = list(expr.constraint)
-            for subexpr in constraint:
-                if not isinstance(subexpr, Flag) and not isinstance(subexpr, AllOfOperator):
-                    raise NotImplementedError('Nested operators not supported')
+            constraint = list(replace_nary(expr.constraint))
             # then replace the expression itself
-            if isinstance(expr, AnyOfOperator) or isinstance(expr, ExactlyOneOfOperator):
-                # || ( a b c ... ) -> [!a !b !c !...]? ( a )
+            if isinstance(expr, AtMostOneOfOperator):
+                # ?? ( a b c ... ) -> || ( ( a !b !c ... ) ( !a b !c ... ) ... ( !a !b !c ... !last ) )
+                result = []
+                begin = []
+                while len(constraint)>0:
+                    cur = constraint.pop(0)
+                    result.append(AllOfOperator(begin + [cur] + [negate(x) for x in constraint]))
+                    begin.append(negate(cur))
+                # dont forget all disabled is ok
+                result.append(AllOfOperator(begin))
+                yield AnyOfOperator(result)
+            elif isinstance(expr, ExactlyOneOfOperator):
                 # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
-                if len(constraint) == 1:
-                    if isinstance(constraint[0], AllOfOperator):
-                        for x in constraint[0].constraint:
-                            yield x
-                    else:
-                        yield constraint[0]
-                else:
-                    yield Implication([v.negated() for v in constraint], constraint[0:1])
-            if isinstance(expr, AtMostOneOfOperator) or isinstance(expr, ExactlyOneOfOperator):
-                # ?? ( a b c ... ) -> a? ( !b !c ... ) b? ( !c ... ) ...
-                # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
-                while len(constraint) > 1:
-                    k = constraint.pop(0)
-                    yield Implication([k], [f.negated() for f in constraint])
+                m = list(replace_nary([AtMostOneOfOperator(constraint)]))
+                yield AllOfOperator([AnyOfOperator(constraint), m])
         else:
             raise ValueError('Unknown AST expr: %s' % expr)
 
@@ -98,9 +94,9 @@ def merge_and_expand_implications(ast):
                                 j.constraint)
                 elif isinstance(i, AllOfOperator):
                     for j in i.constraint:
-                        yield Implication(expr.condition, [j])
+                        yield Implication(expr.condition, [j], strict=True)
                 else:
-                    yield Implication(expr.condition, [i])
+                    yield Implication(expr.condition, [i], strict=True)
         else:
             yield expr
 
@@ -121,6 +117,18 @@ def replace_nested_implications(ast):
             n = list(really_replace_nested_implications(expr.constraint))
             expr.constraint = n
         yield expr
+
+def normalize(ast):
+    # a? b? c --> [a,b]?c
+    merged = list(merge_and_expand_implications(ast))
+    # || ( a? ( b ) c ) -> || ( ( a b ) c )
+    unnested = list(replace_nested_implications(merged))
+    # kill ^^ and ??
+    boolean = list(replace_nary(unnested))
+    # reduce again
+    # a? b? c --> [a,b]?c
+    reduced = list(merge_and_expand_implications(boolean))
+    return reduced
 
 def sort_nary(ast, sort_key):
     for expr in ast:
