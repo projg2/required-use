@@ -134,7 +134,7 @@ def normalize(ast, trace=False):
     # reduce again
     # a? b? c --> [a,b]?c
     reduced = list(merge_and_expand_implications(boolean))
-    print("End result after merging: %s"%reduced)
+    if trace: print("End result after merging: %s"%reduced)
     return reduced
 
 def sort_nary(ast, sort_key):
