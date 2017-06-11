@@ -86,10 +86,19 @@ class NaryOperator(object):
     def __repr__(self):
         return '%s %s' % (self.op, self.constraint)
 
+def flatten_operator(l, operator):
+    r = []
+    for c in l:
+        if isinstance(c, operator):
+            r += flatten_operator(c.constraint, operator)
+        else:
+            r.append(c)
+    return r
 
 class AnyOfOperator(NaryOperator):
     def __init__(self, constraint):
-        super(AnyOfOperator, self).__init__('||', constraint)
+        rc = flatten_operator(list(constraint), AnyOfOperator)
+        super(AnyOfOperator, self).__init__('||', rc)
 
 
 class ExactlyOneOfOperator(NaryOperator):
@@ -104,7 +113,8 @@ class AtMostOneOfOperator(NaryOperator):
 
 class AllOfOperator(NaryOperator):
     def __init__(self, constraint, enabled=True):
-        super(AllOfOperator, self).__init__('&&', constraint)
+        rc = flatten_operator(list(constraint), AllOfOperator)
+        super(AllOfOperator, self).__init__('&&', rc)
         self.enabled = enabled
 
     def __repr__(self):
