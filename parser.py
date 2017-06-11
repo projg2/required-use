@@ -49,6 +49,26 @@ class Implication(object):
         if stricter:
             assert(all_object_in_allowed_set(self._allowed_nest, condition))
             assert(all_object_in_allowed_set(self._allowed_nest, constraint))
+            ncons = []
+            for i in constraint:
+                if i not in condition and i not in ncons:
+                    ncons.append(i)
+            constraint = ncons
+            nc = []
+            for c in condition:
+                if c not in nc:
+                    nc.append(c)
+            condition = nc
+
+            for i in constraint:
+                if i.negated() in constraint:
+                    raise ValueError('Constraint %s is impossible'%constraint)
+
+            for i in condition:
+                if i.negated() in condition:
+                    condition = []
+                    constraint = []
+
         self.condition = condition
         self.constraint = constraint
 
