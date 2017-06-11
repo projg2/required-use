@@ -104,6 +104,24 @@ def merge_and_expand_implications(ast):
         else:
             yield expr
 
+def really_replace_nested_implications(ast):
+    for expr in ast:
+        if isinstance(expr, Implication):
+            m = list(really_replace_nested_implications(expr.constraint))
+            yield AllOfOperator(expr.condition+m)
+        else:
+            if hasattr(expr, "constraint"):
+                m = list(really_replace_nested_implications(expr.constraint))
+                expr.constraint = m
+            yield expr
+
+def replace_nested_implications(ast):
+    for expr in ast:
+        if hasattr(expr, "constraint"):
+            n = list(really_replace_nested_implications(expr.constraint))
+            expr.constraint = n
+        yield expr
+
 def sort_nary(ast, sort_key):
     for expr in ast:
         if isinstance(expr, Flag):
