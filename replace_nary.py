@@ -88,6 +88,21 @@ def replace_allof(ast):
         else:
             raise ValueError('Unknown AST expr: %s' % expr)
 
+def merge_and_expand_implications(ast):
+    for expr in ast:
+        if isinstance(expr, Implication):
+            for i in expr.constraint:
+                if isinstance(i, Implication):
+                    for j in merge_and_expand_implications([i]):
+                        yield Implication(expr.condition+j.condition,
+                                j.constraint)
+                elif isinstance(i, AllOfOperator):
+                    for j in i.constraint:
+                        yield Implication(expr.condition, [j])
+                else:
+                    yield Implication(expr.condition, [i])
+        else:
+            yield expr
 
 def sort_nary(ast, sort_key):
     for expr in ast:
