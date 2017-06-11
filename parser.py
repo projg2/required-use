@@ -6,6 +6,17 @@ import sys
 
 flag_re = re.compile(r'^[A-Za-z0-9][A-Za-z0-9+_@-]*$')
 
+def object_in_allowed_set(allowed, o):
+    for i in allowed:
+        if isinstance(o, i): return True
+    return False
+
+def all_object_in_allowed_set(allowed, l):
+    all_good=True
+    for i in l:
+        if not object_in_allowed_set(allowed, i):
+            return False
+    return True
 
 class Flag(object):
     def __init__(self, name, enabled=True):
@@ -28,14 +39,24 @@ class Flag(object):
 
 
 class Implication(object):
-    def __init__(self, condition, constraint):
+    _allowed_nest = [ Flag ]
+
+    def __init__(self, condition, constraint, strict=False, stricter=False):
         assert(isinstance(condition, list))
         assert(isinstance(constraint, list))
+        if strict:
+            assert(len(constraint)==1)
+        if stricter:
+            assert(all_object_in_allowed_set(self._allowed_nest, condition))
+            assert(all_object_in_allowed_set(self._allowed_nest, constraint))
         self.condition = condition
         self.constraint = constraint
 
     def __repr__(self):
-        return '%s? => %s' % (self.condition, self.constraint)
+        if len(self.constraint)>1:
+            return '%s? => %s' % (self.condition, self.constraint)
+        else:
+            return '%s? => %s' % (self.condition, self.constraint[0])
 
     def can_break(self, other):
         # 1.The conditions are compatible: No p_i is the negation of a p'_j.
