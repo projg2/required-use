@@ -24,17 +24,15 @@ def replace_nary(ast):
         elif isinstance(expr, Implication):
             yield Implication(expr.condition, list(replace_nary(expr.constraint)))
         elif isinstance(expr, AtMostOneOfOperator):
-            # ?? ( a b c ... ) -> || ( ( a !b !c ... ) ( !a b !c ... ) ... ( !a !b !c ... !last ) )
-            constraint = list(replace_nary(expr.constraint))
+            # ?? ( a b c ... ) -> a? ( !b !c ... ) b? ( !c ... ) ...
+            # -> && ( || ( ( !b !c ... ) !a ) || ( ( !c ... ) !b ) ... )
+            constraint = [ negate(x) for x in replace_nary(expr.constraint) ]
             result = []
-            begin = []
-            while len(constraint)>0:
-                cur = constraint.pop(0)
-                result.append(AllOfOperator(begin + [cur] + [negate(x) for x in constraint]))
-                begin.append(negate(cur))
-            # dont forget all disabled is ok
-            result.append(AllOfOperator(begin))
-            yield AnyOfOperator(result)
+            while len(constraint) > 0:
+                r = constraint.pop(0)
+                l = AllOfOperator([ x for x in constraint ])
+                result.append(AnyOfOperator([l,r]))
+            yield AllOfOperator(result)
         elif isinstance(expr, ExactlyOneOfOperator):
             # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
             constraint = list(replace_nary(expr.constraint))

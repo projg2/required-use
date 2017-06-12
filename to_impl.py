@@ -57,8 +57,7 @@ def check_equal(s, expected):
 def selftest():
     check_equal('|| ( a b )', [ Implication([Flag('b').negated()],[Flag('a')])])
     check_equal('?? ( a b )',
-        [ Implication([Flag('a')],[Flag('b').negated()]),
-          Implication([Flag('a'), Flag('b')],[Flag('b').negated()])])
+        [ Implication([Flag('a')],[Flag('b').negated()]) ])
     check_equal('|| ( a b c? ( d ) )',
         [ Implication([Flag('b').negated(), Flag('c').negated()],[Flag('a')]),
           Implication([Flag('b').negated(), Flag('d').negated()],[Flag('a')])])
