@@ -21,7 +21,7 @@ def main(filename):
     print("\tNeed topo sort: %i"%(len(need_topo_sort)))
     print("\tCyclic: %i"%(len(cyclic)))
 
-    tp = parse_error
+    tp = cyclic
     for k in tp:
         print("%s: %s"%(k,tp[k]))
 
