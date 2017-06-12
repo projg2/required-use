@@ -64,6 +64,9 @@ def selftest():
     check_equal('a b? ( c )',
         [ Implication([],[Flag('a')]),
           Implication([Flag('b')],[Flag('c')])])
+    check_equal('^^ ( a b )',
+        [ Implication([Flag('b').negated()],[Flag('a')]),
+          Implication([Flag('a')], [Flag('b').negated()])])
 
 if __name__ == '__main__':
     from replace_nary import normalize
