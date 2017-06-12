@@ -34,6 +34,9 @@ class Flag(object):
     def __eq__(self, other):
         return (self.name == other.name and self.enabled == other.enabled)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def negated(self):
         return Flag(self.name, not self.enabled)
 
@@ -118,6 +121,16 @@ class Implication(object):
 
     def __lt__(self, other): return str(self) < str(other)
 
+    def __eq__(self, other):
+        if not isinstance(other, Implication): return False
+        if len(self.constraint) != len(other.constraint): return False
+        if len(self.condition) != len(other.condition): return False
+        for i in range(len(self.constraint)):
+            if self.constraint[i] != other.constraint[i]: return False
+        for i in range(len(self.condition)):
+            if self.condition[i] != other.condition[i]: return False
+        return True
+
 class NaryOperator(object):
     def __init__(self, op, constraint):
         assert op in ('||', '??', '^^', '&&')
@@ -141,6 +154,12 @@ class AnyOfOperator(NaryOperator):
         rc = flatten_operator(list(constraint), AnyOfOperator)
         super(AnyOfOperator, self).__init__('||', rc)
 
+    def __eq__(self, other):
+        if not isinstance(other, AnyOfOperator): return False
+        if len(self.constraint) != len(other.constraint): return False
+        for i in range(len(self.constraint)):
+            if self.constraint[i] != other.constraint[i]: return False
+        return True
 
 class ExactlyOneOfOperator(NaryOperator):
     def __init__(self, constraint):
@@ -161,6 +180,13 @@ class AllOfOperator(NaryOperator):
     def __repr__(self):
         return '%s%s' % ('' if self.enabled else '!',
                 super(AllOfOperator, self).__repr__())
+
+    def __eq__(self, other):
+        if not isinstance(other, AllOfOperator): return False
+        if len(self.constraint) != len(other.constraint): return False
+        for i in range(len(self.constraint)):
+            if self.constraint[i] != other.constraint[i]: return False
+        return True
 
     def negated(self):
         return AllOfOperator(self.constraint, not self.enabled)
