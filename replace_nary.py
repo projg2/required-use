@@ -118,7 +118,61 @@ def replace_nested_implications(ast):
             expr.constraint = n
         yield expr
 
-def normalize(ast, trace=False):
+def simplify_with_immutables(ast, immutables):
+    if type(ast) == list:
+        r = []
+        for x in ast:
+            m = simplify_with_immutables(x,immutables)
+            if m is True: continue
+            if m is False: return False
+            r.append(m)
+        return r
+    elif isinstance(ast, Flag):
+        if ast.name in immutables:
+            if ast.enabled: return immutables[ast.name]
+            else: return not immutables[ast.name]
+        else: return ast
+    elif isinstance(ast, Implication):
+        nc = []
+        for c in ast.condition:
+            if c.name in immutables:
+                if not immutables[c.name]: return True
+            else: nc.append(c)
+        if len(nc) <= 0:
+            return simplify_with_immutables(AllOfOperator(ast.constraint), immutables)
+        ncons = []
+        for c in ast.constraint:
+            m = simplify_with_immutables(c, immutables)
+            if m is True: continue
+            if m is False: return False
+            ncons.append(m)
+        if len(ncons) <= 0: return True
+        return Implication(nc, ncons)
+    elif isinstance(ast, AllOfOperator):
+        r = []
+        for x in ast.constraint:
+            m = simplify_with_immutables(x, immutables)
+            if m is True: continue
+            if m is False: return False
+            r.append(m)
+        if len(r) <= 0: return True
+        if len(r) == 1: return r[0]
+        return AllOfOperator(r)
+    elif isinstance(ast, AnyOfOperator):
+        r = []
+        for x in ast.constraint:
+            m = simplify_with_immutables(x, immutables)
+            if m is True: return True
+            if m is False: continue
+            r.append(m)
+        if len(r) <= 0: return False
+        if len(r) == 1: return r[0]
+        return AnyOfOperator(r)
+    else:
+        raise ValueError('Unknown AST expr: %s' % ast)
+
+
+def normalize(ast, immutables={}, trace=False):
     if trace: print("Input: %s" % ast)
     # a? b? c --> [a,b]?c
     merged = list(merge_and_expand_implications(ast))
@@ -129,9 +183,12 @@ def normalize(ast, trace=False):
     # kill ^^ and ??
     boolean = list(replace_nary(unnested))
     if trace: print("Converted to boolean algebra: %s"%boolean)
+    # || () -> False, && () -> True, || ( immutable_true bar ) -> True, etc.
+    simplified_ast = simplify_with_immutables(boolean, immutables)
+    if trace: print("Simplified ast: %s"%simplified_ast)
     # reduce again
     # a? b? c --> [a,b]?c
-    reduced = list(merge_and_expand_implications(boolean))
+    reduced = list(merge_and_expand_implications(simplified_ast))
     if trace: print("End result after merging: %s"%reduced)
     return reduced
 
