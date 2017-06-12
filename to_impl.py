@@ -2,9 +2,9 @@
 
 from parser import (Flag, Implication, NaryOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
-        AllOfOperator)
+        AllOfOperator, parse_string)
 
-from replace_nary import negate, merge_and_expand_implications
+from replace_nary import negate, merge_and_expand_implications, normalize
 
 def merge(cond, cons):
     if isinstance(cond, Flag):
@@ -43,13 +43,26 @@ def to_implication(expr):
     else:
          raise ValueError('Invalid operator in %s'%expr)
 
+def parse_immutables(s):
+    ret = {}
+    for x in s.split():
+        if x.startswith('!'):
+            ret[x[1:]] = False
+        else:
+            ret[x] = True
+    return ret
+
+def convert_to_implications(constraint_str, immutable_flag_str=''):
+    cons = list(parse_string(constraint_str))
+    immutable_flags = parse_immutables(immutable_flag_str)
+    n = normalize(cons, immutable_flags)
+    flat = []
+    for e in n:
+        flat+=to_implication(e)
+    return flat
+
 def check_equal(s, expected):
-    from replace_nary import normalize
-    from parser import parse_string
-    m = list(normalize(list(parse_string(s))))
-    r = []
-    for e in m:
-        r+=to_implication(e)
+    r=convert_to_implications(s)
     assert len(r) == len(expected)
     for i in range(len(r)):
         assert r[i] == expected[i]

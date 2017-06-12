@@ -3,34 +3,14 @@
 import sys
 
 from parser import parse_string
-from replace_nary import sort_nary, replace_nary, replace_allof, merge_and_expand_implications, replace_nested_implications
-from replace_nary import normalize
-from to_impl import to_implication
-
-
-from flatten_implications import flatten_implications
+from to_impl import convert_to_implications
 from toposort import toposort, toposort_flatten
-
-
-def parse_immutables(s):
-    ret = {}
-    for x in s.split():
-        if x.startswith('!'):
-            ret[x[1:]] = False
-        else:
-            ret[x] = True
-    return ret
 
 
 def solve(constraint_str, immutable_flag_str='', pkg='', parse_error={},
         good={}, need_topo_sort={}, cyclic={}, reraise=True, print_status=False):
-    cons = list(parse_string(constraint_str))
-    immutable_flags = parse_immutables(immutable_flag_str)
-    n = normalize(cons, immutable_flags)
     try:
-        flat = []
-        for e in n:
-            flat+=to_implication(e)
+        flat = convert_to_implications(constraint_str,immutable_flag_str)
     except:
         parse_error[pkg]=constraint_str
         if reraise: raise
