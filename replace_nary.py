@@ -37,7 +37,7 @@ def replace_nary(ast):
             # ^^ ( a b c ... ) -> || ( a b c ... ) ?? ( a b c ... )
             constraint = list(replace_nary(expr.constraint))
             m = list(replace_nary([AtMostOneOfOperator(constraint)]))
-            yield AllOfOperator([AnyOfOperator(constraint), m])
+            yield AllOfOperator([AnyOfOperator(constraint)]+ m)
         elif isinstance(expr, AllOfOperator):
             yield AllOfOperator(list(replace_nary(expr.constraint)))
         elif isinstance(expr, AnyOfOperator):
