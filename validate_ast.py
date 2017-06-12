@@ -17,12 +17,7 @@ def validate_ast(ast, in_nary=False):
             assert isinstance(expr.condition[0], Flag)
             validate_ast(expr.constraint)
         elif isinstance(expr, AllOfOperator):
-            if not in_nary:
-                # meaningless but valid
-                print('Warning: meaningless all-of operator (extra braces)')
-            elif in_nary in ('^^', '??'):
-                raise ValueError('All-of in ^^/??')
-            validate_ast(expr.constraint, in_nary)
+            raise ValueError('All-of operator forbidden')
         elif isinstance(expr, NaryOperator):
             if in_nary:
                 raise ValueError('Nested n-ary operator!')
