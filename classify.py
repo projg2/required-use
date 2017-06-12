@@ -21,8 +21,9 @@ def main(filename):
     print("\tNeed topo sort: %i"%(len(need_topo_sort)))
     print("\tCyclic: %i"%(len(cyclic)))
 
-    for k in cyclic:
-        print("%s: %s"%(k,cyclic[k]))
+    tp = parse_error
+    for k in tp:
+        print("%s: %s"%(k,tp[k]))
 
 if __name__ == '__main__':
     main(*sys.argv[1:])
