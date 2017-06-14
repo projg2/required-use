@@ -75,7 +75,10 @@ def apply_solving(flags, constraint, immutable_flags, negate=False):
                         else:
                             past_first = True
         elif isinstance(expr, AllOfOperator):
-            apply_solving(flags, expr.constraint, immutable_flags, negate)
+            if not negate:
+                apply_solving(flags, expr.constraint, immutable_flags, negate)
+            else:
+                apply_solving(flags, expr.constraint[0:1], immutable_flags, negate)
         else:
             raise ValueError('Unknown AST expr: %s' % expr)
 
