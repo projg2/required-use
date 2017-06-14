@@ -6,6 +6,7 @@ from parser import (parse_string, Flag, Implication, AllOfOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
         NaryOperator)
 from replace_nary import sort_nary
+from to_impl import convert_to_implications
 
 
 def validate_constraint(flags, constraint):
@@ -158,12 +159,17 @@ def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
             print('%*s |' % (len(sorted_flags) * 2, ''), end='')
 
 
-def print_solutions(ast, immutable_flags):
+def print_solutions(constraint_str, immutable_str):
     # sort n-ary expressions
-    ast = sort_nary(ast, immutability_sort(immutable_flags))
+    immutable_flags = parse_immutables(immutable_str)
+    ast = sort_nary(parse_string(constraint_str),
+            immutability_sort(immutable_flags))
     ast = list(ast)
     print(ast)
     print()
+
+    # implication variant
+    impl_ast = convert_to_implications(constraint_str, immutable_str)
 
     all_flags = frozenset(x.name for x in get_all_flags(ast))
 
@@ -209,6 +215,18 @@ def print_solutions(ast, immutable_flags):
                 ret = do_solving(sorted_flags, inp_flags, ast, immutable_flags)
             except (ImmutabilityError, InfiniteLoopError):
                 pass
+            else:
+                ret_impl = do_solving(sorted_flags, inp_flags,
+                        impl_ast, immutable_flags, verbose=False)
+                if ret != ret_impl:
+                    print('%*s |\033[31m' % (len(sorted_flags) * 2, ''), end='')
+                    for f in sorted_flags:
+                        if ret_impl[f] != ret[f]:
+                            print(' \033[1m%d\033[22m' % ret_impl[f], end='')
+                        else:
+                            print(' %d' % ret_impl[f], end='')
+                    print(' [mismatch between implication and basic form]\033[0m')
+
 
 
 def parse_immutables(s):
@@ -222,8 +240,7 @@ def parse_immutables(s):
 
 
 def main(constraint_str, immutable_flag_str=''):
-    print_solutions(parse_string(constraint_str),
-            parse_immutables(immutable_flag_str))
+    print_solutions(constraint_str, immutable_flag_str)
 
 
 if __name__ == '__main__':
