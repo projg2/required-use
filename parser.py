@@ -82,33 +82,43 @@ class Implication(object):
             return '%s? => %s' % (self.condition, self.constraint[0])
 
     def can_break(self, other):
+        # "p_1? p_2? ... p_n? ( q_1 ... q_m )" and "p'_1? p'_2? ... p'_{n'}?
+        # ( q'_1 ... q'_{m'} )", assuming the first is satisfied, when can solving
+        # the 2nd break the 1st?
+
+        # Symbols used for sanity:
+        # c1 -- self.condition; c2 -- other.condition
+        # r1 -- self.constraint; r2 -- other.constraint
+
+        # trivially true == condition does not match => constraint is not applied
+
         # 1.The conditions are compatible: No p_i is the negation of a p'_j.
-        for p in other.condition:
-            for pp in self.condition:
-                if p == pp.negated(): return False
+        for c2 in other.condition:
+            for c1 in self.condition:
+                if c2 == c1.negated(): return False
         # 2.Solving the 1st does not make the 2nd trivially true: No q_i is
         # the negation of a p'_j.
-        for q in other.constraint:
-            for pp in self.condition:
-                if q == pp.negated(): return False
+        for r2 in other.constraint:
+            for c1 in self.condition:
+                if r2 == c1.negated(): return False
         # 3.Solving the 2nd does not make the 1st trivially true afterwards: No
         # p_i is the negation of a q'_j.
-        for p in other.condition:
-            for qp in self.constraint:
-                if p == qp.negated(): return False
+        for c2 in other.condition:
+            for r1 in self.constraint:
+                if c2 == r1.negated(): return False
         # 4.Solving the 2nd does break the 1st assumption: (A q_i is
         # the negation of a q_'j) or (a q'_j is some p_i and one of q_1 ... q_m
         #  might be false).
-        for qp in self.constraint:
-            for q in other.constraint:
-                if qp == q.negated(): return True
-            for p in other.condition:
-                if p == qp:
+        for r1 in self.constraint:
+            for r2 in other.constraint:
+                if r1 == r2.negated(): return True
+            for c2 in other.condition:
+                if c2 == r1:
                     # If {q_i} is a subset of {p'_i}U{q'_i} then the 1st is trivially
                     # true if we apply the 2nd, so it does not break it.
                     trivial=True
-                    for p in other.constraint:
-                        if p not in self.condition and p not in self.constraint:
+                    for r2 in other.constraint:
+                        if r2 not in self.condition and r2 not in self.constraint:
                             trivial=False
                     return not trivial
         return False
