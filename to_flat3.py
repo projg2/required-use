@@ -15,12 +15,12 @@ def flatten3(ast, conditions=[]):
             for x in flatten3(expr.constraint, conditions+expr.condition):
                 yield x
         elif isinstance(expr, AnyOfOperator):
-            # || ( a b c ... ) -> [!a !b !c ...]? ( a )
-            yield (conditions+[x.negated() for x in expr.constraint], expr.constraint[0])
+            # || ( a b c ... ) -> [!b !c ...]? ( a )
+            yield (conditions+[x.negated() for x in expr.constraint[1:]], expr.constraint[0])
         elif isinstance(expr, AtMostOneOfOperator):
-            # ?? ( a b c ... ) -> a? ( !b !c ... ) [!a b]? ( !c ... ) ...
+            # ?? ( a b c ... ) -> a? ( !b !c ... ) b? ( !c ... ) ...
             for i in range(0, len(expr.constraint)-1):
-                yield (conditions + [x.negated() for x in expr.constraint[0:i]] + expr.constraint[i:i+1],
+                yield (conditions + expr.constraint[i:i+1],
                     [x.negated() for x in expr.constraint[i+1:]])
         elif isinstance(expr, ExactlyOneOfOperator):
             for x in flatten3([AnyOfOperator(expr.constraint)], conditions):
