@@ -76,10 +76,7 @@ class Implication(object):
         self.constraint = constraint
 
     def __repr__(self):
-        if len(self.constraint)>1:
-            return '%s? => %s' % (self.condition, self.constraint)
-        else:
-            return '%s? => %s' % (self.condition, self.constraint[0])
+        return '%s? => %s' % (self.condition, self.constraint)
 
     def can_break(self, other):
         # "p_1? p_2? ... p_n? ( q_1 ... q_m )" and "p'_1? p'_2? ... p'_{n'}?
