@@ -92,18 +92,30 @@ class Implication(object):
 
         # trivially true == condition does not match => constraint is not applied
 
+        # strip 'common prefix' off the two conditions -- since the solver
+        # does not backtrack to the root, we should not reconsider it either.
+        # otherwise we will fail e.g. with !a? ( a b ), i.e. when the first
+        # subexpression causes 'common prefix' to stop to apply.
+        # we use exact object matching (is) since we only want to match
+        # prefix graph-wise and not e.g. separate '!a? ( a ) !a? ( b )'
+        self_conds = list(self.condition)
+        other_conds = list(other.condition)
+        while self_conds and other_conds and self_conds[0] is other_conds[0]:
+            self_conds.pop(0)
+            other_conds.pop(0)
+
         # 1.The conditions are compatible: No p_i is the negation of a p'_j.
-        for c2 in other.condition:
-            for c1 in self.condition:
+        for c2 in other_conds:
+            for c1 in self_conds:
                 if c2 == c1.negated(): return False
         # 2.Solving the 1st does not make the 2nd trivially true: No q_i is
         # the negation of a p'_j.
         for r2 in other.constraint:
-            for c1 in self.condition:
+            for c1 in self_conds:
                 if r2 == c1.negated(): return False
         # 3.Solving the 2nd does not make the 1st trivially true afterwards: No
         # p_i is the negation of a q'_j.
-        for c2 in other.condition:
+        for c2 in other_conds:
             for r1 in self.constraint:
                 if c2 == r1.negated(): return False
         # 4.Solving the 2nd does break the 1st assumption: (A q_i is
@@ -112,13 +124,13 @@ class Implication(object):
         for r1 in self.constraint:
             for r2 in other.constraint:
                 if r1 == r2.negated(): return True
-            for c2 in other.condition:
+            for c2 in other_conds:
                 if c2 == r1:
                     # If {q_i} is a subset of {p'_i}U{q'_i} then the 1st is trivially
                     # true if we apply the 2nd, so it does not break it.
                     trivial=True
                     for r2 in other.constraint:
-                        if r2 not in self.condition and r2 not in self.constraint:
+                        if r2 not in self_conds and r2 not in self.constraint:
                             trivial=False
                     return not trivial
         return False
