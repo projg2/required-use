@@ -1,19 +1,28 @@
 #!/usr/bin/env python
 
 import sys
-from nsolve import solve
+from nsolve import solve, Cyclic, NeedTopoSort
+
 
 def main(filename):
     f = open(filename, "r")
-    parse_error={}
-    good={}
-    need_topo_sort={}
-    cyclic={}
+    parse_error=[]
+    good=[]
+    need_topo_sort=[]
+    cyclic=[]
 
     for l in f.readlines():
         pkg,cons = l.split(' ', 1)
-        solve(cons, pkg=pkg, parse_error=parse_error, good=good,
-                need_topo_sort=need_topo_sort, cyclic=cyclic, reraise=False)
+        try:
+            solve(cons)
+        except Cyclic:
+            cyclic.append((pkg, cons))
+        except NeedTopoSort:
+            need_topo_sort.append((pkg, cons))
+        except Exception:
+            parse_error.append((pkg, cons))
+        else:
+            good.append((pkg, cons))
 
     print("Stats:")
     print("\tParse error: %i"%(len(parse_error)))
@@ -22,8 +31,9 @@ def main(filename):
     print("\tCyclic: %i"%(len(cyclic)))
 
     tp = cyclic
-    for k in tp:
-        print("%s: %s"%(k,tp[k]))
+    for v in tp:
+        print("%s: %s" % v)
+
 
 if __name__ == '__main__':
     main(*sys.argv[1:])
