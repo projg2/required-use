@@ -59,6 +59,26 @@ def verify_conflicts(flats):
                 raise ConflictVerifyError(c1, c2, e1)
 
 
+class BackAlterationVerifyError(Exception):
+    def __init__(self, cj, ej, ci, ei):
+        super(BackAlterationVerifyError, self).__init__(
+            "Expression (%s => %s) may enable the condition of (%s => %s)"
+            % (cj, ej, ci, ei))
+
+
+def verify_back_alteration(flats):
+    # for every pair of paths (Pi, Pj) so that i < j,
+    # back alteration occurs if both:
+    # 1. Ej is in Ci,
+    # 2. Ci can occur simultaneously with Cj.
+    for i in range(len(flats)):
+        ci, ei = flats[i]
+        for j in range(i+1, len(flats)):
+            cj, ej = flats[j]
+            if ej in ci and conditions_can_coexist(ci, cj):
+                raise BackAlterationVerifyError(cj, ej, ci, ei)
+
+
 def main(constraint_str, immutable_str=''):
     immutables = parse_immutables(immutable_str)
     ast = sort_nary(validate_ast_passthrough(parse_string(constraint_str)),
@@ -74,6 +94,8 @@ def main(constraint_str, immutable_str=''):
     print('Immutability ok.')
     verify_conflicts(flats)
     print('Conflicts ok.')
+    verify_back_alteration(flats)
+    print('Back alteration ok.')
 
 
 if __name__ == '__main__':
