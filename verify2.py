@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import sys
+import unittest
 
-from parser import (parse_string, Flag, Implication, NaryOperator,
-        AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator)
+from parser import parse_string
 from replace_nary import sort_nary
 from solve import immutability_sort, parse_immutables
 from to_flat3 import flatten3
@@ -66,6 +66,7 @@ def verify_conflicts(flats):
     # for every unique pair of paths, conflicts occurs if both:
     # 1. E1 = !E2,
     # 2. C1 can occur simultaneously with C2.
+    flats = list(flats)
     for i in range(len(flats)):
         c1, e1 = flats[i]
         for j in range(i+1, len(flats)):
@@ -86,6 +87,7 @@ def verify_back_alteration(flats):
     # back alteration occurs if both:
     # 1. Ej is in the non-common part of Ci,
     # 2. Ci can occur simultaneously with Cj.
+    flats = list(flats)
     for i in range(len(flats)):
         ci, ei = flats[i]
         for j in range(i+1, len(flats)):
@@ -118,6 +120,64 @@ def main(constraint_str, immutable_str=''):
     print('Conflicts ok.')
     verify_back_alteration(flats)
     print('Back alteration ok.')
+
+
+class SelfTests(unittest.TestCase):
+    def test_basic_immutability(self):
+        flats = list(flatten3(parse_string('a? ( b )')))
+        verify_immutability(flats, {})
+        verify_immutability(flats, parse_immutables('b'))
+        self.assertRaises(ImmutabilityVerifyError,
+            verify_immutability, flats, parse_immutables('!b'))
+        verify_immutability(flats, parse_immutables('!a !b'))
+
+    def test_immutability_any_of(self):
+        unsorted = list(flatten3(parse_string('|| ( a b c )')))
+        verify_immutability(unsorted, {})
+        # this one should fail without sorting
+        immutables = parse_immutables('!a')
+        self.assertRaises(ImmutabilityVerifyError,
+            verify_immutability, unsorted, immutables)
+        verify_immutability(flatten3(sort_nary(parse_string('|| ( a b c )'),
+            immutability_sort(immutables))), immutables)
+
+    def test_immutability_at_most_one_of(self):
+        unsorted = list(flatten3(parse_string('?? ( a b c )')))
+        verify_immutability(unsorted, {})
+        verify_immutability(unsorted, parse_immutables('a'))
+        verify_immutability(unsorted, parse_immutables('!a'))
+        verify_immutability(unsorted, parse_immutables('!a b'))
+        # multiple values can not be enabled
+        self.assertRaises(ImmutabilityVerifyError,
+            verify_immutability, unsorted, parse_immutables('a b'))
+        # this one should fail without sorting
+        immutables = parse_immutables('b')
+        self.assertRaises(ImmutabilityVerifyError,
+            verify_immutability, unsorted, immutables)
+        verify_immutability(flatten3(sort_nary(parse_string('?? ( a b c )'),
+            immutability_sort(immutables))), immutables)
+
+    def test_conflicts(self):
+        verify_conflicts(flatten3(parse_string('a !b')))
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string('a !a')))
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string('a? ( b ) !b')))
+        verify_conflicts(flatten3(parse_string('a? ( b ) !a? ( !b )')))
+
+    def test_back_alteration(self):
+        verify_back_alteration(flatten3(parse_string('a? ( b ) b? ( c )')))
+        self.assertRaises(BackAlterationVerifyError,
+            verify_back_alteration, flatten3(parse_string('b? ( c ) a? ( b )')))
+        verify_back_alteration(flatten3(parse_string('b? ( c ) a? ( !b )')))
+        # test common prefix logic
+        verify_back_alteration(flatten3(parse_string('a? ( a a )')))
+
+    def test_back_alteration_circular_case(self):
+        verify_back_alteration(flatten3(parse_string('!b? ( a ) a? ( !b )')))
+        verify_back_alteration(flatten3(parse_string('a? ( b ) b? ( a )')))
+        self.assertRaises(BackAlterationVerifyError,
+            verify_back_alteration, flatten3(parse_string('a? ( !b ) b? ( a )')))
 
 
 if __name__ == '__main__':
