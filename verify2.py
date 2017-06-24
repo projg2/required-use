@@ -31,7 +31,22 @@ def verify_immutability(flats, immutables):
                 raise ImmutabilityVerifyError(c, e, e.enabled)
 
 
+def split_common_prefix(c1, c2):
+    # if two paths have common prefix (using node-wise comparison),
+    # split it into a separate list
+    pfx = []
+    c1 = list(c1)
+    c2 = list(c2)
+    while c1 and c2 and c1[0] is c2[0]:
+        pfx.append(c1.pop(0))
+        del c2[0]
+    return (pfx, c1, c2)
+
+
 def conditions_can_coexist(c1, c2):
+    # ignore common prefix as it will never conflict (the solver does
+    # not backtrace to the top node)
+    pfx, c1, c2 = split_common_prefix(c1, c2)
     # C1 and C2 can occur simultaneously unless C2 contains a negation
     # of any member of C1 (the condition is symmetric)
     for ci in c1:
@@ -69,13 +84,14 @@ class BackAlterationVerifyError(Exception):
 def verify_back_alteration(flats):
     # for every pair of paths (Pi, Pj) so that i < j,
     # back alteration occurs if both:
-    # 1. Ej is in Ci,
+    # 1. Ej is in the non-common part of Ci,
     # 2. Ci can occur simultaneously with Cj.
     for i in range(len(flats)):
         ci, ei = flats[i]
         for j in range(i+1, len(flats)):
             cj, ej = flats[j]
-            if ej in ci and conditions_can_coexist(ci, cj):
+            pfx, cis, cjs = split_common_prefix(ci, cj)
+            if ej in cis and conditions_can_coexist(cis, cjs):
                 raise BackAlterationVerifyError(cj, ej, ci, ei)
 
 
