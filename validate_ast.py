@@ -6,7 +6,7 @@ from parser import (parse_string, Flag, Implication, NaryOperator,
         AllOfOperator)
 
 
-def validate_ast(ast, in_nary=False):
+def validate_ast_passthrough(ast, in_nary=False):
     for expr in ast:
         if isinstance(expr, Flag):
             pass
@@ -24,6 +24,12 @@ def validate_ast(ast, in_nary=False):
             validate_ast(expr.constraint, in_nary=expr.op)
         else:
             raise NotImplementedError('Unknown AST subexpr: %s' % expr)
+        yield expr
+
+
+def validate_ast(ast, in_nary=False):
+    for x in validate_ast_passthrough(ast, in_nary):
+        pass
 
 
 if __name__ == '__main__':

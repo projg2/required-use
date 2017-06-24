@@ -6,7 +6,7 @@ from parser import parse_string, Implication
 #from to_impl import convert_to_implications
 from to_flat3 import flatten3
 from toposort import toposort, toposort_flatten
-from validate_ast import validate_ast
+from validate_ast import validate_ast_passthrough
 
 
 class Cyclic(Exception):
@@ -20,8 +20,7 @@ class NeedTopoSort(Exception):
 def solve(constraint_str, immutable_flag_str='', print_status=False):
     #flat = convert_to_implications(constraint_str,immutable_flag_str)
     flat = []
-    ast = list(parse_string(constraint_str))
-    validate_ast(ast)
+    ast = validate_ast_passthrough(parse_string(constraint_str))
     for x, y in flatten3(ast):
         flat.append(Implication(x, [y]))
     for i in flat:
