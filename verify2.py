@@ -32,7 +32,11 @@ def verify_immutability(flats, immutables):
 
 
 def conditions_can_coexist(c1, c2):
-    # XXX
+    # C1 and C2 can occur simultaneously unless C2 contains a negation
+    # of any member of C1 (the condition is symmetric)
+    for ci in c1:
+        if ci.negated() in c2:
+            return False
     return True
 
 
