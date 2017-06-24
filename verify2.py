@@ -31,6 +31,30 @@ def verify_immutability(flats, immutables):
                 raise ImmutabilityVerifyError(c, e, e.enabled)
 
 
+def conditions_can_coexist(c1, c2):
+    # XXX
+    return True
+
+
+class ConflictVerifyError(Exception):
+    def __init__(self, c1, c2, e1):
+        super(ConflictVerifyError, self).__init__(
+            "Expression (%s => %s) can conflict with (%s => %s)"
+            % (c1, e1, c2, e1.negated()))
+
+
+def verify_conflicts(flats):
+    # for every unique pair of paths, conflicts occurs if both:
+    # 1. E1 = !E2,
+    # 2. C1 can occur simultaneously with C2.
+    for i in range(len(flats)):
+        c1, e1 = flats[i]
+        for j in range(i+1, len(flats)):
+            c2, e2 = flats[j]
+            if e1 == e2.negated() and conditions_can_coexist(c1, c2):
+                raise ConflictVerifyError(c1, c2, e1)
+
+
 def main(constraint_str, immutable_str=''):
     immutables = parse_immutables(immutable_str)
     ast = sort_nary(validate_ast_passthrough(parse_string(constraint_str)),
@@ -44,6 +68,8 @@ def main(constraint_str, immutable_str=''):
 
     verify_immutability(flats, immutables)
     print('Immutability ok.')
+    verify_conflicts(flats)
+    print('Conflicts ok.')
 
 
 if __name__ == '__main__':
