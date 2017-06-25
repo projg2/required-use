@@ -122,7 +122,8 @@ class immutability_sort(object):
 def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
     prev_states = [inp_flags]
     out_flags = dict(inp_flags)
-    while True:
+    # allow up to 1000 iterations
+    for i in range(1, 1000):
         try:
             try:
                 apply_solving(out_flags, ast, immutable_flags)
@@ -155,7 +156,7 @@ def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
                 print('\033[0m')
 
         if valid_now:
-            return out_flags
+            return (out_flags, i)
 
         prev_states.append(dict(out_flags))
         if verbose:
@@ -240,6 +241,9 @@ def print_solutions(constraint_str, immutable_str):
         print('')
 
     # solve for input = 000... to 111...
+    max_iters = 0
+    unsolvable = 0
+    mismatched_solutions = 0
     for inpv in range(0, 2**no_flags):
         inp_flags = {}
         for x in range(0, no_flags):
@@ -269,13 +273,17 @@ def print_solutions(constraint_str, immutable_str):
             print(' (==)\033[0m')
         else:
             try:
-                ret = do_solving(sorted_flags, inp_flags, ast, immutable_flags)
+                ret, iters = do_solving(sorted_flags, inp_flags, ast, immutable_flags)
             except (ImmutabilityError, InfiniteLoopError):
-                pass
+                unsolvable += 1
             else:
-                ret_impl = do_solving(sorted_flags, inp_flags,
+                if iters > max_iters:
+                    max_iters = iters
+
+                ret_impl, ret_iters = do_solving(sorted_flags, inp_flags,
                         impl_ast, immutable_flags, verbose=False)
                 if ret != ret_impl:
+                    mismatched_solutions += 1
                     print('%*s |\033[31m' % (len(sorted_flags) * 2, ''), end='')
                     for f in sorted_flags:
                         if ret_impl[f] != ret[f]:
@@ -283,6 +291,10 @@ def print_solutions(constraint_str, immutable_str):
                         else:
                             print(' %d' % ret_impl[f], end='')
                     print(' [mismatch between implication and basic form]\033[0m')
+
+    print()
+    print('max iterations: %d;  unsolvable: %d;  mismatched solutions for transform: %d'
+            % (max_iters, unsolvable, mismatched_solutions))
 
 
 
