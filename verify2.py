@@ -3,7 +3,7 @@
 import sys
 import unittest
 
-from parser import parse_string
+from parser import parse_string, Flag
 from replace_nary import sort_nary
 from solve import immutability_sort, parse_immutables
 from to_flat3 import flatten3
@@ -183,6 +183,19 @@ def main(constraint_str, immutable_str=''):
 
 
 class SelfTests(unittest.TestCase):
+    def test_condition_can_occur(self):
+        self.assertTrue(condition_can_occur(
+            [Flag('a')], flatten3(parse_string('b? ( !a )')), []))
+        self.assertTrue(condition_can_occur(
+            [Flag('a')], flatten3(parse_string('b? ( !a )')), [Flag('a')]))
+        self.assertFalse(condition_can_occur(
+            [Flag('a')], flatten3(parse_string('b? ( !a )')), [Flag('b')]))
+        self.assertTrue(condition_can_occur(
+            [Flag('a')], flatten3(parse_string('b? ( !b ) b? ( !a )')), [Flag('b')]))
+        # test for the common prefix issue
+        self.assertFalse(condition_can_occur(
+            [Flag('a')], flatten3(parse_string('b? ( !b !a )')), [Flag('b')]))
+
     def test_self_conflicting(self):
         verify_self_conflicting(flatten3(parse_string('a? ( a? ( b ) )')))
         self.assertRaises(SelfConflictingVerifyError,
