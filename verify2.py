@@ -70,6 +70,46 @@ def conditions_can_coexist(c1, c2):
     return True
 
 
+def test_condition(c, flag_dict, unspecified_val):
+    """ Check if condition c is matched by flag_dict. Assume
+    unspecified_val for flags that are not in flag_dict, i.e.:
+
+    - unspecified_val=False -> flags not in dict cause it to fail,
+
+    - unspecified_val=True -> flags not in dict cause it to match.
+
+    """
+
+    for ci in c:
+        if ci.name not in flag_dict:
+            if not unspecified_val:
+                return False
+        elif ci.enabled != flag_dict[ci.name]:
+            return False
+    return True
+
+
+def condition_can_occur(final_condition, prev_flats, flags):
+    # check if condition C can occur with specific flags set
+    # check all previous flats for exactly matching conditions and apply
+    # them to the flag states
+    flag_states = {}
+    for f in flags:
+        # conditions_can_coexist() should guarantee this
+        assert f.name not in flag_states
+        flag_states[f.name] = f.enabled
+
+    for c, e in prev_flats:
+        # if all conditions evaluate to true (and there are no unmatched
+        # flags), the effect will always apply
+        if test_condition(c, flag_states, False):
+            # apply the effect if all conditions evaluates to true
+            flag_states[e.name] = e.enabled
+
+    # now verify whether our condition still can still evaluate to true
+    return test_condition(final_condition, flag_states, True)
+
+
 class ConflictVerifyError(Exception):
     def __init__(self, c1, c2, e1):
         super(ConflictVerifyError, self).__init__(
@@ -87,7 +127,10 @@ def verify_conflicts(flats):
         for j in range(i+1, len(flats)):
             c2, e2 = flats[j]
             if e1 == e2.negated() and conditions_can_coexist(c1, c2):
-                raise ConflictVerifyError(c1, c2, e1)
+                common_conds = set(c1) | set(c2)
+                if (condition_can_occur(c1, flats[:i], common_conds)
+                        and condition_can_occur(c2, flats[:j], common_conds)):
+                    raise ConflictVerifyError(c1, c2, e1)
 
 
 class BackAlterationVerifyError(Exception):
@@ -186,6 +229,8 @@ class SelfTests(unittest.TestCase):
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string('a? ( b ) !b')))
         verify_conflicts(flatten3(parse_string('a? ( b ) !a? ( !b )')))
+        verify_conflicts(flatten3(parse_string(
+            'a? ( !b c ) b? ( !c )')))
 
     def test_back_alteration(self):
         verify_back_alteration(flatten3(parse_string('a? ( b ) b? ( c )')))
@@ -711,34 +756,27 @@ class SelfTests(unittest.TestCase):
         verify_conflicts(flatten3(parse_string(
             'jdbc? ( extraengine server !static ) server? ( tokudb? ( jemalloc ) ) static? ( !pam ) static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !jdbc? ( !extraengine !embedded ) ) !tokudb? ( ?? ( tcmalloc jemalloc ) )')))
 
-    def test_conflict_false_positives(self):
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'cli? ( ^^ ( readline libedit ) ) truetype? ( gd ) vpx? ( gd ) cjk? ( gd ) exif? ( gd ) xpm? ( gd ) gd? ( zlib ) simplexml? ( xml ) soap? ( xml ) wddx? ( xml ) xmlrpc? ( || ( xml iconv ) ) xmlreader? ( xml ) xslt? ( xml ) ldap-sasl? ( ldap ) mhash? ( hash ) phar? ( hash ) recode? ( !imap !mysql !mysqli libmysqlclient? ( pdo ) ) libmysqlclient? ( || ( mysql mysqli pdo ) ) qdbm? ( !gdbm ) readline? ( !libedit ) sharedmem? ( !threads ) !cli? ( !cgi? ( !fpm? ( !apache2? ( !embed? ( cli ) ) ) ) )')))
+    def test_conflict_indirectly_blocked(self):
+        verify_conflicts(flatten3(parse_string(
+            'cli? ( ^^ ( readline libedit ) ) truetype? ( gd ) vpx? ( gd ) cjk? ( gd ) exif? ( gd ) xpm? ( gd ) gd? ( zlib ) simplexml? ( xml ) soap? ( xml ) wddx? ( xml ) xmlrpc? ( || ( xml iconv ) ) xmlreader? ( xml ) xslt? ( xml ) ldap-sasl? ( ldap ) mhash? ( hash ) phar? ( hash ) recode? ( !imap !mysql !mysqli libmysqlclient? ( pdo ) ) libmysqlclient? ( || ( mysql mysqli pdo ) ) qdbm? ( !gdbm ) readline? ( !libedit ) sharedmem? ( !threads ) !cli? ( !cgi? ( !fpm? ( !apache2? ( !embed? ( cli ) ) ) ) )')))
 
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'jdbc? ( extraengine server !static ) server? ( tokudb? ( jemalloc ) ) static? ( !pam ) static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) !tokudb? ( ?? ( tcmalloc jemalloc ) )')))
+        verify_conflicts(flatten3(parse_string(
+            'jdbc? ( extraengine server !static ) server? ( tokudb? ( jemalloc ) ) static? ( !pam ) static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) !tokudb? ( ?? ( tcmalloc jemalloc ) )')))
 
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'dane? ( !gnutls !pkcs11 ) dmarc? ( spf dkim ) pkcs11? ( gnutls ) spf? ( exiscan-acl ) srs? ( exiscan-acl )')))
+        verify_conflicts(flatten3(parse_string(
+            'dane? ( !gnutls !pkcs11 ) dmarc? ( spf dkim ) pkcs11? ( gnutls ) spf? ( exiscan-acl ) srs? ( exiscan-acl )')))
 
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                '!amd64? ( !x86? ( !debug binary ) ) debug? ( !binary )')))
+        verify_conflicts(flatten3(parse_string(
+            '!amd64? ( !x86? ( !debug binary ) ) debug? ( !binary )')))
 
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'test? ( gflags ) abi_x86_32? ( !sparse !lapack ) sparse? ( lapack )')))
+        verify_conflicts(flatten3(parse_string(
+            'test? ( gflags ) abi_x86_32? ( !sparse !lapack ) sparse? ( lapack )')))
 
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                '|| ( mysql sqlite ) taglib? ( !id3tag ) id3tag? ( !taglib ) thumbnail? ( ffmpeg !libextractor ) ffmpeg? ( !libextractor ) libextractor? ( !ffmpeg !thumbnail )')))
+        verify_conflicts(flatten3(parse_string(
+            '|| ( mysql sqlite ) taglib? ( !id3tag ) id3tag? ( !taglib ) thumbnail? ( ffmpeg !libextractor ) ffmpeg? ( !libextractor ) libextractor? ( !ffmpeg !thumbnail )')))
 
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                '|| ( python_targets_python2_7 ) gtk2? ( gtk ) qemu_softmmu_targets_arm? ( fdt ) qemu_softmmu_targets_microblaze? ( fdt ) qemu_softmmu_targets_mips64el? ( fdt ) qemu_softmmu_targets_ppc? ( fdt ) qemu_softmmu_targets_ppc64? ( fdt ) sdl2? ( sdl ) static? ( static-user !alsa !bluetooth !gtk !gtk2 !opengl !pulseaudio ) virtfs? ( xattr ) vte? ( gtk )')))
+        verify_conflicts(flatten3(parse_string(
+            'static? ( static-user !alsa !bluetooth !gtk !gtk2 !opengl !pulseaudio !vte ) || ( python_targets_python2_7 ) gtk2? ( gtk ) qemu_softmmu_targets_arm? ( fdt ) qemu_softmmu_targets_microblaze? ( fdt ) qemu_softmmu_targets_mips64el? ( fdt ) qemu_softmmu_targets_ppc? ( fdt ) qemu_softmmu_targets_ppc64? ( fdt ) sdl2? ( sdl ) virtfs? ( xattr ) vte? ( gtk )')))
 
     def test_real_case_conflicts(self):
         self.assertRaises(ConflictVerifyError,
