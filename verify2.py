@@ -696,67 +696,41 @@ class SelfTests(unittest.TestCase):
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
                 'cli? ( ^^ ( readline libedit ) ) truetype? ( gd ) vpx? ( gd ) cjk? ( gd ) exif? ( gd ) xpm? ( gd ) gd? ( zlib ) simplexml? ( xml ) soap? ( xml ) wddx? ( xml ) xmlrpc? ( || ( xml iconv ) ) xmlreader? ( xml ) xslt? ( xml ) ldap-sasl? ( ldap ) mhash? ( hash ) phar? ( hash ) recode? ( !imap !mysql !mysqli ) libmysqlclient? ( || ( mysql mysqli pdo ) ) qdbm? ( !gdbm ) readline? ( !libedit ) sharedmem? ( !threads ) !cli? ( !cgi? ( !fpm? ( !apache2? ( !embed? ( cli ) ) ) ) )')))
+        verify_conflicts(flatten3(parse_string(
+            'cli? ( ^^ ( readline libedit ) ) truetype? ( gd ) vpx? ( gd ) cjk? ( gd ) exif? ( gd ) xpm? ( gd ) gd? ( zlib ) simplexml? ( xml ) soap? ( xml ) wddx? ( xml ) xmlrpc? ( || ( xml iconv ) ) xmlreader? ( xml ) xslt? ( xml ) ldap-sasl? ( ldap ) mhash? ( hash ) phar? ( hash ) recode? ( !imap !mysql !mysqli ) libmysqlclient? ( !recode? ( || ( mysql mysqli pdo ) ) recode? ( pdo ) ) qdbm? ( !gdbm ) readline? ( !libedit ) sharedmem? ( !threads ) !cli? ( !cgi? ( !fpm? ( !apache2? ( !embed? ( cli ) ) ) ) )')))
 
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
                 '|| ( cli cgi fpm apache2 embed phpdbg ) cli? ( ^^ ( readline libedit ) ) truetype? ( gd ) webp? ( gd ) cjk? ( gd ) exif? ( gd ) xpm? ( gd ) gd? ( zlib ) simplexml? ( xml ) soap? ( xml ) wddx? ( xml ) xmlrpc? ( || ( xml iconv ) ) xmlreader? ( xml ) xslt? ( xml ) ldap-sasl? ( ldap ) mhash? ( hash ) phar? ( hash ) qdbm? ( !gdbm ) readline? ( !libedit ) recode? ( !imap !mysqli ) sharedmem? ( !threads ) mysql? ( || ( mysqli pdo ) )')))
+        verify_conflicts(flatten3(parse_string(
+            '|| ( cli cgi fpm apache2 embed phpdbg ) cli? ( ^^ ( readline libedit ) ) truetype? ( gd ) webp? ( gd ) cjk? ( gd ) exif? ( gd ) xpm? ( gd ) gd? ( zlib ) simplexml? ( xml ) soap? ( xml ) wddx? ( xml ) xmlrpc? ( || ( xml iconv ) ) xmlreader? ( xml ) xslt? ( xml ) ldap-sasl? ( ldap ) mhash? ( hash ) phar? ( hash ) qdbm? ( !gdbm ) readline? ( !libedit ) recode? ( !imap !mysqli ) sharedmem? ( !threads ) mysql? ( !recode? ( || ( mysqli pdo ) ) recode? ( pdo ) )')))
 
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
-            'jdbc? ( extraengine server !static ) server? ( tokudb? ( jemalloc ) ) static? ( !pam ) static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) ?? ( tcmalloc jemalloc )')))
+                'jdbc? ( extraengine server !static ) server? ( tokudb? ( jemalloc ) ) static? ( !pam ) static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) ?? ( tcmalloc jemalloc )')))
+        verify_conflicts(flatten3(parse_string(
+            'jdbc? ( extraengine server !static ) server? ( tokudb? ( jemalloc ) ) static? ( !pam ) static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !jdbc? ( !extraengine !embedded ) ) !tokudb? ( ?? ( tcmalloc jemalloc ) )')))
 
-    def test_real_case_conflicts(self):
+    def test_conflict_false_positives(self):
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
-                '^^ ( gcrypt kernel nettle openssl ) python? ( || ( python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 python_targets_python3_6 ) ) static? ( !gcrypt )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                '^^ ( openssl nss gnutls ) nettle? ( gnutls )')))
+                'cli? ( ^^ ( readline libedit ) ) truetype? ( gd ) vpx? ( gd ) cjk? ( gd ) exif? ( gd ) xpm? ( gd ) gd? ( zlib ) simplexml? ( xml ) soap? ( xml ) wddx? ( xml ) xmlrpc? ( || ( xml iconv ) ) xmlreader? ( xml ) xslt? ( xml ) ldap-sasl? ( ldap ) mhash? ( hash ) phar? ( hash ) recode? ( !imap !mysql !mysqli libmysqlclient? ( pdo ) ) libmysqlclient? ( || ( mysql mysqli pdo ) ) qdbm? ( !gdbm ) readline? ( !libedit ) sharedmem? ( !threads ) !cli? ( !cgi? ( !fpm? ( !apache2? ( !embed? ( cli ) ) ) ) )')))
 
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
-                'dane? ( !gnutls ) dmarc? ( spf dkim ) pkcs11? ( gnutls ) spf? ( exiscan-acl ) srs? ( exiscan-acl )')))
+                'jdbc? ( extraengine server !static ) server? ( tokudb? ( jemalloc ) ) static? ( !pam ) static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) !tokudb? ( ?? ( tcmalloc jemalloc ) )')))
 
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
-                'debug? ( !binary ) !amd64? ( !x86? ( binary ) )')))
+                'dane? ( !gnutls !pkcs11 ) dmarc? ( spf dkim ) pkcs11? ( gnutls ) spf? ( exiscan-acl ) srs? ( exiscan-acl )')))
 
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
-                'device-mapper-only? ( !clvm !cman !lvm1 !lvm2create_initrd !thin ) systemd? ( udev ) static? ( !udev )')))
+                '!amd64? ( !x86? ( !debug binary ) ) debug? ( !binary )')))
 
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
-                'emacs? ( gtk ) !curl? ( !gtk )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'fasteap? ( !gnutls !ssl ) smartcard? ( ssl ) ?? ( qt4 qt5 )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'fasteap? ( !ssl ) smartcard? ( ssl )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'minimal? ( !oqgraph ) minimal? ( !sphinx ) tokudb? ( jemalloc ) tcmalloc? ( !jemalloc ) jemalloc? ( !tcmalloc ) minimal? ( !cluster !extraengine !embedded ) static? ( !ssl )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'static? ( !plugins !pkcs11 ) lzo? ( !lz4 ) pkcs11? ( ssl ) mbedtls? ( ssl !libressl ) pkcs11? ( ssl ) !plugins? ( !pam !down-root ) inotify? ( plugins )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'systemd? ( !python_single_target_pypy ) ^^ ( python_single_target_pypy python_single_target_python2_7 python_single_target_python3_4 python_single_target_python3_5 ) python_single_target_pypy? ( python_targets_pypy ) python_single_target_python2_7? ( python_targets_python2_7 ) python_single_target_python3_4? ( python_targets_python3_4 ) python_single_target_python3_5? ( python_targets_python3_5 )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'test? ( gflags ) sparse? ( lapack ) abi_x86_32? ( !sparse !lapack )')))
-
-        self.assertRaises(ConflictVerifyError,
-            verify_conflicts, flatten3(parse_string(
-                'threads? ( !cxx !mpi !fortran !hl ) fortran2003? ( fortran )')))
+                'test? ( gflags ) abi_x86_32? ( !sparse !lapack ) sparse? ( lapack )')))
 
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
@@ -766,9 +740,85 @@ class SelfTests(unittest.TestCase):
             verify_conflicts, flatten3(parse_string(
                 '|| ( python_targets_python2_7 ) gtk2? ( gtk ) qemu_softmmu_targets_arm? ( fdt ) qemu_softmmu_targets_microblaze? ( fdt ) qemu_softmmu_targets_mips64el? ( fdt ) qemu_softmmu_targets_ppc? ( fdt ) qemu_softmmu_targets_ppc64? ( fdt ) sdl2? ( sdl ) static? ( static-user !alsa !bluetooth !gtk !gtk2 !opengl !pulseaudio ) virtfs? ( xattr ) vte? ( gtk )')))
 
+    def test_real_case_conflicts(self):
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                '^^ ( gcrypt kernel nettle openssl ) python? ( || ( python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 python_targets_python3_6 ) ) static? ( !gcrypt )')))
+        verify_conflicts(flatten3(parse_string(
+            '!static? ( ^^ ( gcrypt kernel nettle openssl ) ) static? ( ^^ ( kernel nettle openssl ) ) python? ( || ( python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 python_targets_python3_6 ) ) static? ( !gcrypt )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                '^^ ( openssl nss gnutls ) nettle? ( gnutls )')))
+        verify_conflicts(flatten3(parse_string(
+            '!nettle? ( ^^ ( openssl nss gnutls ) ) nettle? ( gnutls )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'dane? ( !gnutls ) dmarc? ( spf dkim ) pkcs11? ( gnutls ) spf? ( exiscan-acl ) srs? ( exiscan-acl )')))
+        verify_conflicts(flatten3(parse_string(
+            'dane? ( !gnutls !pkcs11 ) dmarc? ( spf dkim ) pkcs11? ( !dane? ( gnutls ) ) spf? ( exiscan-acl ) srs? ( exiscan-acl )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'debug? ( !binary ) !amd64? ( !x86? ( binary ) )')))
+        verify_conflicts(flatten3(parse_string(
+            'debug? ( amd64? ( !binary ) x86? ( !binary ) ) !amd64? ( !x86? ( binary ) )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'device-mapper-only? ( !clvm !cman !lvm1 !lvm2create_initrd !thin ) systemd? ( udev ) static? ( !udev )')))
+        verify_conflicts(flatten3(parse_string(
+            'device-mapper-only? ( !clvm !cman !lvm1 !lvm2create_initrd !thin ) systemd? ( !static? ( udev ) ) static? ( !systemd !udev )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'emacs? ( gtk ) !curl? ( !gtk )')))
+        verify_conflicts(flatten3(parse_string(
+            'emacs? ( curl gtk ) !emacs? ( !curl? ( !gtk ) )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'fasteap? ( !gnutls !ssl ) smartcard? ( ssl ) ?? ( qt4 qt5 )')))
+        verify_conflicts(flatten3(parse_string(
+            'fasteap? ( !smartcard? ( !gnutls !ssl ) ) smartcard? ( !fasteap ssl ) ?? ( qt4 qt5 )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'fasteap? ( !ssl ) smartcard? ( ssl )')))
+        verify_conflicts(flatten3(parse_string(
+            'fasteap? ( !smartcard? ( !ssl ) ) smartcard? ( !fasteap ssl )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'minimal? ( !oqgraph ) minimal? ( !sphinx ) tokudb? ( jemalloc ) tcmalloc? ( !jemalloc ) jemalloc? ( !tcmalloc ) minimal? ( !cluster !extraengine !embedded ) static? ( !ssl )')))
+        verify_conflicts(flatten3(parse_string(
+            'minimal? ( !oqgraph ) minimal? ( !sphinx ) tokudb? ( jemalloc ) !tokudb? ( tcmalloc? ( !jemalloc ) ) jemalloc? ( !tcmalloc ) minimal? ( !cluster !extraengine !embedded ) static? ( !ssl )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'static? ( !plugins !pkcs11 ) lzo? ( !lz4 ) pkcs11? ( ssl ) mbedtls? ( ssl !libressl ) pkcs11? ( ssl ) !plugins? ( !pam !down-root ) inotify? ( plugins )')))
+        verify_conflicts(flatten3(parse_string(
+            'static? ( !plugins !pkcs11 ) lzo? ( !lz4 ) pkcs11? ( ssl ) mbedtls? ( ssl !libressl ) pkcs11? ( ssl ) !plugins? ( !pam !inotify !down-root )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'systemd? ( !python_single_target_pypy ) ^^ ( python_single_target_pypy python_single_target_python2_7 python_single_target_python3_4 python_single_target_python3_5 ) python_single_target_pypy? ( python_targets_pypy ) python_single_target_python2_7? ( python_targets_python2_7 ) python_single_target_python3_4? ( python_targets_python3_4 ) python_single_target_python3_5? ( python_targets_python3_5 )')))
+        verify_conflicts(flatten3(parse_string(
+            'systemd? ( ^^ ( python_single_target_python2_7 python_single_target_python3_4 python_single_target_python3_5 ) ) !systemd? ( ^^ ( python_single_target_pypy python_single_target_python2_7 python_single_target_python3_4 python_single_target_python3_5 ) ) python_single_target_pypy? ( python_targets_pypy ) python_single_target_python2_7? ( python_targets_python2_7 ) python_single_target_python3_4? ( python_targets_python3_4 ) python_single_target_python3_5? ( python_targets_python3_5 )')))
+
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'threads? ( !cxx !mpi !fortran !hl ) fortran2003? ( fortran )')))
+        verify_conflicts(flatten3(parse_string(
+            'threads? ( !cxx !mpi !fortran !fortran2003 !hl ) fortran2003? ( !threads? ( fortran ) )')))
+
         self.assertRaises(ConflictVerifyError,
             verify_conflicts, flatten3(parse_string(
                 'postgres? ( dlz ) berkdb? ( dlz ) mysql? ( dlz !threads ) odbc? ( dlz ) ldap? ( dlz ) gost? ( !libressl ssl ) threads? ( caps ) dnstap? ( threads ) python? ( || ( python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 python_targets_python3_6 ) )')))
+        verify_conflicts(flatten3(parse_string(
+            'postgres? ( dlz ) berkdb? ( dlz ) mysql? ( dlz !dnstap !threads ) odbc? ( dlz ) ldap? ( dlz ) gost? ( !libressl ssl ) threads? ( caps ) dnstap? ( !mysql? ( threads ) ) python? ( || ( python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 python_targets_python3_6 ) )')))
+
 
 if __name__ == '__main__':
     main(*sys.argv[1:])
