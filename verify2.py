@@ -207,15 +207,6 @@ class SelfTests(unittest.TestCase):
     def test_real_case_back_alteration(self):
         # every one in form of: (broken, fixed)
 
-        # TODO: false positive? P3 duplicates P1
-        self.assertRaises(BackAlterationVerifyError,
-            verify_back_alteration, flatten3(parse_string(
-                '!jit? ( !shadowstack ) x86? ( !cpu_flags_x86_sse2? ( !jit !shadowstack ) )')))
-        verify_back_alteration(flatten3(parse_string(
-            'x86? ( !cpu_flags_x86_sse2? ( !jit !shadowstack ) ) !jit? ( !shadowstack )')))
-        verify_back_alteration(flatten3(parse_string(
-            'x86? ( !cpu_flags_x86_sse2? ( !jit ) ) !jit? ( !shadowstack )')))
-
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 '?? ( gstreamer ffmpeg ) cue? ( gstreamer ) upnp-av? ( gstreamer ) !miner-fs? ( !cue !exif !flac !gif !gsf !iptc !iso !jpeg !mp3 !pdf !playlist !tiff !vorbis !xml !xmp !xps )')))
@@ -234,54 +225,70 @@ class SelfTests(unittest.TestCase):
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 '^^ ( python_single_target_pypy python_single_target_pypy3 python_single_target_python2_7 python_single_target_python3_4 python_single_target_python3_5 python_single_target_python3_6 ) python_single_target_pypy? ( python_targets_pypy ) python_single_target_pypy3? ( python_targets_pypy3 ) python_single_target_python2_7? ( python_targets_python2_7 ) python_single_target_python3_4? ( python_targets_python3_4 ) python_single_target_python3_5? ( python_targets_python3_5 ) python_single_target_python3_6? ( python_targets_python3_6 ) vim? ( ^^ ( python_single_target_python2_7 ) )')))
-
-        self.assertRaises(BackAlterationVerifyError,
-            verify_back_alteration, flatten3(parse_string(
-                '^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) ?? ( tcmalloc jemalloc ) static? ( !libressl !openssl yassl )')))
+        verify_back_alteration(flatten3(parse_string(
+            'vim? ( ^^ ( python_single_target_python2_7 ) ) ^^ ( python_single_target_pypy python_single_target_pypy3 python_single_target_python2_7 python_single_target_python3_4 python_single_target_python3_5 python_single_target_python3_6 ) python_single_target_pypy? ( python_targets_pypy ) python_single_target_pypy3? ( python_targets_pypy3 ) python_single_target_python2_7? ( python_targets_python2_7 ) python_single_target_python3_4? ( python_targets_python3_4 ) python_single_target_python3_5? ( python_targets_python3_5 ) python_single_target_python3_6? ( python_targets_python3_6 )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 '^^ ( yassl openssl libressl ) minimal? ( !extraengine !embedded ) tcmalloc? ( !jemalloc ) jemalloc? ( !tcmalloc ) static? ( yassl )')))
-
-        self.assertRaises(BackAlterationVerifyError,
-            verify_back_alteration, flatten3(parse_string(
-                'aalib? ( X ) bidi? ( truetype ) cddb? ( cdda ) dvb? ( dvbpsi ) dxva2? ( avcodec ) ffmpeg? ( avcodec avformat swscale ) fontconfig? ( truetype ) gnutls? ( gcrypt ) httpd? ( lua ) libcaca? ( X ) libtar? ( skins ) libtiger? ( kate ) qt4? ( X ) qt5? ( X ) sdl? ( X ) skins? ( truetype X xml || ( qt4 qt5 ) ) vaapi? ( avcodec X ) vdpau? ( X ) vlm? ( encode ) xv? ( xcb )')))
+        verify_back_alteration(flatten3(parse_string(
+            'static? ( yassl ) ^^ ( yassl openssl libressl ) minimal? ( !extraengine !embedded ) tcmalloc? ( !jemalloc ) jemalloc? ( !tcmalloc )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'addc? ( python gnutls !system-mitkrb5 ) test? ( python ) addns? ( python ) ads? ( acl gnutls ldap ) gpg? ( addc ) ?? ( system-heimdal system-mitkrb5 ) python_targets_python2_7')))
+        verify_back_alteration(flatten3(parse_string(
+            'gpg? ( addc ) addc? ( python gnutls !system-mitkrb5 ) test? ( python ) addns? ( python ) ads? ( acl gnutls ldap ) ?? ( system-heimdal system-mitkrb5 ) python_targets_python2_7')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'afs? ( kerberos ) backup? ( sqlite ) calalarm? ( http ) http? ( sqlite ) jmap? ( http xapian ) sphinx? ( mysql )')))
+        verify_back_alteration(flatten3(parse_string(
+            'afs? ( kerberos ) backup? ( sqlite ) calalarm? ( http ) jmap? ( http xapian ) http? ( sqlite ) sphinx? ( mysql )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'all-modules? ( python xdmf2 boost ) java? ( qt5 ) python? ( python_targets_python2_7 ) tcl? ( rendering ) test? ( python ) tk? ( tcl ) web? ( python ) ^^ ( X aqua offscreen )')))
+        verify_back_alteration(flatten3(parse_string(
+            'all-modules? ( python xdmf2 boost ) java? ( qt5 ) tk? ( tcl ) tcl? ( rendering ) test? ( python ) web? ( python ) ^^ ( X aqua offscreen ) python? ( python_targets_python2_7 )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'alsa? ( sound ) fusionsound? ( sound ) gles? ( video ) nas? ( sound ) opengl? ( video ) pulseaudio? ( sound ) wayland? ( gles ) xinerama? ( X ) xscreensaver? ( X )')))
+        verify_back_alteration(flatten3(parse_string(
+            'alsa? ( sound ) fusionsound? ( sound ) wayland? ( gles ) gles? ( video ) nas? ( sound ) opengl? ( video ) pulseaudio? ( sound ) xinerama? ( X ) xscreensaver? ( X )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'annotations? ( privatestorage ) avatars? ( vcard ) birthdayreminder? ( vcard ) bookmarks? ( privatestorage ) captchaforms? ( dataforms ) commands? ( dataforms ) datastreamsmanager? ( dataforms ) filemessagearchive? ( messagearchiver ) filestreamsmanager? ( datastreamsmanager ) filetransfer? ( filestreamsmanager datastreamsmanager ) pepmanager? ( servicediscovery ) registration? ( dataforms ) remotecontrol? ( commands dataforms ) servermessagearchive? ( messagearchiver ) sessionnegotiation? ( dataforms )')))
+        verify_back_alteration(flatten3(parse_string(
+            'annotations? ( privatestorage ) avatars? ( vcard ) birthdayreminder? ( vcard ) bookmarks? ( privatestorage ) captchaforms? ( dataforms ) remotecontrol? ( commands dataforms ) commands? ( dataforms ) filemessagearchive? ( messagearchiver ) filetransfer? ( filestreamsmanager datastreamsmanager ) filestreamsmanager? ( datastreamsmanager ) datastreamsmanager? ( dataforms ) pepmanager? ( servicediscovery ) registration? ( dataforms ) servermessagearchive? ( messagearchiver ) sessionnegotiation? ( dataforms )')))
+        verify_back_alteration(flatten3(parse_string(
+            'annotations? ( privatestorage ) avatars? ( vcard ) birthdayreminder? ( vcard ) bookmarks? ( privatestorage ) captchaforms? ( dataforms ) remotecontrol? ( commands ) commands? ( dataforms ) filemessagearchive? ( messagearchiver ) filetransfer? ( filestreamsmanager ) filestreamsmanager? ( datastreamsmanager ) datastreamsmanager? ( dataforms ) pepmanager? ( servicediscovery ) registration? ( dataforms ) servermessagearchive? ( messagearchiver ) sessionnegotiation? ( dataforms )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'asm? ( || ( amd64 arm ) arm? ( experimental ) ) ecdh? ( experimental ) java? ( ecdh ) test_openssl? ( test )')))
+        verify_back_alteration(flatten3(parse_string(
+            'asm? ( || ( amd64 arm ) arm? ( experimental ) ) java? ( ecdh ) ecdh? ( experimental ) test_openssl? ( test )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'autostart? ( dbus ) cairo? ( X ) gtk2? ( dbus ) gtk3? ( dbus ) introspection? ( dbus ) pango? ( cairo ) qt4? ( X dbus )')))
+        verify_back_alteration(flatten3(parse_string(
+            'autostart? ( dbus ) gtk2? ( dbus ) gtk3? ( dbus ) introspection? ( dbus ) pango? ( cairo ) cairo? ( X ) qt4? ( X dbus )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'bluetooth? ( dbus ) equalizer? ( dbus ) ofono-headset? ( bluetooth ) native-headset? ( bluetooth ) udev? ( || ( alsa oss ) )')))
+        verify_back_alteration(flatten3(parse_string(
+            'equalizer? ( dbus ) ofono-headset? ( bluetooth ) native-headset? ( bluetooth ) bluetooth? ( dbus ) udev? ( || ( alsa oss ) )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'btree? ( tokyocabinet ) bzip2? ( btree ) zlib? ( btree )')))
+        verify_back_alteration(flatten3(parse_string(
+            'bzip2? ( btree ) zlib? ( btree ) btree? ( tokyocabinet )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
@@ -510,6 +517,36 @@ class SelfTests(unittest.TestCase):
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 '|| ( python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 python_targets_python3_6 ) bluetooth? ( gui ) declarative? ( gui network ) designer? ( widgets ) help? ( gui widgets ) location? ( positioning ) multimedia? ( gui network ) opengl? ( gui widgets ) positioning? ( gui ) printsupport? ( gui widgets ) sensors? ( gui ) serialport? ( gui ) sql? ( widgets ) svg? ( gui widgets ) testlib? ( gui widgets ) webchannel? ( network ) webengine? ( network widgets? ( webchannel ) ) webkit? ( gui network printsupport widgets ) websockets? ( network ) widgets? ( gui ) xmlpatterns? ( network )')))
+
+    def test_real_case_back_alteration_false_positives(self):
+        # those are potential false positives
+        # all of them can be solved within a single iteration
+
+        # P3 duplicates P1
+        self.assertRaises(BackAlterationVerifyError,
+            verify_back_alteration, flatten3(parse_string(
+                '!jit? ( !shadowstack ) x86? ( !cpu_flags_x86_sse2? ( !jit !shadowstack ) )')))
+        verify_back_alteration(flatten3(parse_string(
+            'x86? ( !cpu_flags_x86_sse2? ( !jit !shadowstack ) ) !jit? ( !shadowstack )')))
+        verify_back_alteration(flatten3(parse_string(
+            'x86? ( !cpu_flags_x86_sse2? ( !jit ) ) !jit? ( !shadowstack )')))
+
+        # Pn is equivalent to P1
+        self.assertRaises(BackAlterationVerifyError,
+            verify_back_alteration, flatten3(parse_string(
+                '^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) ?? ( tcmalloc jemalloc ) static? ( !libressl !openssl yassl )')))
+        verify_back_alteration(flatten3(parse_string(
+            'static? ( !libressl !openssl yassl ) ^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) ?? ( tcmalloc jemalloc )')))
+        verify_back_alteration(flatten3(parse_string(
+            'static? ( yassl ) ^^ ( yassl openssl libressl ) !server? ( !extraengine !embedded ) ?? ( tcmalloc jemalloc )')))
+
+        # skins forces X, and so do qt*
+        self.assertRaises(BackAlterationVerifyError,
+            verify_back_alteration, flatten3(parse_string(
+                'aalib? ( X ) bidi? ( truetype ) cddb? ( cdda ) dvb? ( dvbpsi ) dxva2? ( avcodec ) ffmpeg? ( avcodec avformat swscale ) fontconfig? ( truetype ) gnutls? ( gcrypt ) httpd? ( lua ) libcaca? ( X ) libtar? ( skins ) libtiger? ( kate ) qt4? ( X ) qt5? ( X ) sdl? ( X ) skins? ( truetype X xml || ( qt4 qt5 ) ) vaapi? ( avcodec X ) vdpau? ( X ) vlm? ( encode ) xv? ( xcb )')))
+        verify_back_alteration(flatten3(parse_string(
+            'aalib? ( X ) bidi? ( truetype ) cddb? ( cdda ) dvb? ( dvbpsi ) dxva2? ( avcodec ) ffmpeg? ( avcodec avformat swscale ) fontconfig? ( truetype ) gnutls? ( gcrypt ) httpd? ( lua ) libcaca? ( X ) libtar? ( skins ) libtiger? ( kate ) sdl? ( X ) skins? ( truetype X xml || ( qt4 qt5 ) ) qt4? ( X ) qt5? ( X ) vaapi? ( avcodec X ) vdpau? ( X ) vlm? ( encode ) xv? ( xcb )')))
+
 
     def test_real_case_conflicts(self):
         self.assertRaises(ConflictVerifyError,
