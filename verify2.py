@@ -10,6 +10,21 @@ from to_flat3 import flatten3
 from validate_ast import validate_ast_passthrough
 
 
+class SelfConflictingVerifyError(Exception):
+    def __init__(self, conditions, effect, sccond):
+        super(SelfConflictingVerifyError, self).__init__(
+            "Expression (%s => %s) is self-conflicting (both %s and %s can not be true simultaneously)"
+            % (conditions, effect, sccond, sccond.negated()))
+
+
+def verify_self_conflicting(flats):
+    # for every path, check for C having foo and !foo
+    for c, e in flats:
+        for ci in c:
+            if ci.negated() in c:
+                raise SelfConflictingVerifyError(c, e, ci)
+
+
 class ImmutabilityVerifyError(Exception):
     def __init__(self, conditions, effect, expected):
         super(ImmutabilityVerifyError, self).__init__(
@@ -114,6 +129,8 @@ def main(constraint_str, immutable_str=''):
         print('%02d. %s' % (i+1, v))
     print()
 
+    verify_self_conflicting(flats)
+    print('Self-conflicting ok.')
     verify_immutability(flats, immutables)
     print('Immutability ok.')
     verify_conflicts(flats)
@@ -123,6 +140,11 @@ def main(constraint_str, immutable_str=''):
 
 
 class SelfTests(unittest.TestCase):
+    def test_self_conflicting(self):
+        verify_self_conflicting(flatten3(parse_string('a? ( a? ( b ) )')))
+        self.assertRaises(SelfConflictingVerifyError,
+            verify_self_conflicting, flatten3(parse_string('a? ( !a? ( b ) )')))
+
     def test_basic_immutability(self):
         flats = list(flatten3(parse_string('a? ( b )')))
         verify_immutability(flats, {})
