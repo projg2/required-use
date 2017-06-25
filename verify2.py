@@ -193,7 +193,10 @@ class SelfTests(unittest.TestCase):
             verify_back_alteration, flatten3(parse_string('b? ( c ) a? ( b )')))
         verify_back_alteration(flatten3(parse_string('b? ( c ) a? ( !b )')))
         # test common prefix logic
-        verify_back_alteration(flatten3(parse_string('a? ( a a )')))
+        verify_back_alteration(flatten3(parse_string('a? ( b a a )')))
+        # test that common prefix is not overzealous
+        self.assertRaises(BackAlterationVerifyError,
+            verify_back_alteration, flatten3(parse_string('a? ( b a ) a? ( a )')))
 
     def test_back_alteration_circular_case(self):
         verify_back_alteration(flatten3(parse_string('!b? ( a ) a? ( !b )')))
