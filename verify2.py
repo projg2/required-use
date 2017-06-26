@@ -99,12 +99,33 @@ def condition_can_occur(final_condition, prev_flats, flags):
         assert f.name not in flag_states
         flag_states[f.name] = f.enabled
 
+    # cache Flag instance testing results to account for common prefixes
+    # (avoid retesting them when partial effects may have changed them)
+    success_cache = set()
+    prev_cond = []
     for c, e in prev_flats:
+        orig_c = list(c)
+        # simpler not to split it since we want only match removed
+        while c and prev_cond:
+            # if we have a common prefix that matches cached success,
+            # strip it
+            if c[0] is prev_cond[0] and id(c[0]) in success_cache:
+                c.pop(0)
+                prev_cond.pop(0)
+            else:
+                break
+
         # if all conditions evaluate to true (and there are no unmatched
         # flags), the effect will always apply
         if test_condition(c, flag_states, False):
+            # all conditions are true, so mark them appropriately in cache
+            # (we do not have to cache partial true since effects do not
+            # get applied, and so the conditions will not be altered)
+            for ci in c:
+                success_cache.add(id(ci))
             # apply the effect if all conditions evaluates to true
             flag_states[e.name] = e.enabled
+        prev_cond = orig_c
 
     # now verify whether our condition still can still evaluate to true
     return test_condition(final_condition, flag_states, True)
