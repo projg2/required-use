@@ -6,7 +6,7 @@ from parser import (parse_string, Flag, Implication, AllOfOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
         NaryOperator)
 from replace_nary import sort_nary
-from to_impl import convert_to_implications
+from to_flat3 import flatten3
 
 
 def validate_constraint(flags, constraint, condition_cache=None):
@@ -183,7 +183,11 @@ def print_solutions(constraint_str, immutable_str):
     print()
 
     # implication variant
-    impl_ast = convert_to_implications(constraint_str, immutable_str)
+    impl_ast = []
+    for c, e in flatten3(ast):
+        if c:
+            e = Implication(c, [e])
+        impl_ast.append(e)
 
     all_flags = frozenset(x.name for x in get_all_flags(ast))
 
