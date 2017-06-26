@@ -316,6 +316,11 @@ class SelfTests(unittest.TestCase):
         verify_conflicts(flatten3(parse_string(
             'a? ( !b c ) b? ( !c )')))
 
+    def test_conflicts_ultimate_corner_case(self):
+        self.assertRaises(ConflictVerifyError,
+            verify_conflicts, flatten3(parse_string(
+                'e? ( !c ) !e? ( !c ) c? ( a? ( b ) ) d? ( a? ( !b ) )')))
+
     def test_back_alteration(self):
         verify_back_alteration(flatten3(parse_string('a? ( b ) b? ( c )')))
         self.assertRaises(BackAlterationVerifyError,
