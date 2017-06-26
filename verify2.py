@@ -104,6 +104,7 @@ def condition_can_occur(final_condition, prev_flats, flags):
     success_cache = set()
     prev_cond = []
     for c, e in prev_flats:
+        c = list(c)
         orig_c = list(c)
         # simpler not to split it since we want only match removed
         while c and prev_cond:
