@@ -163,58 +163,6 @@ def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
             print('%*s |' % (len(sorted_flags) * 2, ''), end='')
 
 
-def add_subcond(impl, out):
-    if len(impl.condition) > 1:
-        out.append(Implication(impl.condition[1:], impl.constraint))
-    else:
-        out.extend(impl.constraint)
-
-
-def combine_common_prefixes(ast):
-    assert(isinstance(ast, list))
-    ast = list(ast)
-    out = []
-
-    while ast:
-        first = ast.pop(0)
-        if isinstance(first, Flag):
-            out.append(first)
-        elif isinstance(first, Implication):
-            assert(first.condition)
-
-            # last one? no way to combine it
-            if not ast:
-                out.append(first)
-                continue
-
-            # do they have a common prefix? if not, do not even start
-            # merging
-            assert(ast[0].condition)
-            if not ast[0].condition[0] is first.condition[0]:
-                out.append(first)
-                continue
-
-            # merge on condition[0]
-            repl = Implication(first.condition[0:1], [])
-            add_subcond(first, repl.constraint)
-
-            while ast:
-                assert(ast[0].condition)
-                if ast[0].condition[0] is first.condition[0]:
-                    add_subcond(ast.pop(0), repl.constraint)
-                else:
-                    break
-
-            # since we were able to successfully merge on cond[0],
-            # attempt cond[1]... recursively
-            repl.constraint = combine_common_prefixes(repl.constraint)
-            out.append(repl)
-        else:
-            raise AssertionError('Unexpected AST node: %s' % first)
-
-    return out
-
-
 def print_solutions(constraint_str, immutable_str):
     # sort n-ary expressions
     immutable_flags = parse_immutables(immutable_str)
@@ -225,9 +173,7 @@ def print_solutions(constraint_str, immutable_str):
     print()
 
     # implication variant
-    # we need to combine common prefixes to get equivalent results
-    impl_ast = combine_common_prefixes(
-            convert_to_implications(constraint_str, immutable_str))
+    impl_ast = convert_to_implications(constraint_str, immutable_str)
 
     all_flags = frozenset(x.name for x in get_all_flags(ast))
 
