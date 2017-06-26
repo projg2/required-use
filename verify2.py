@@ -175,13 +175,6 @@ def verify_back_alteration(flats):
             cj, ej = flats[j]
             pfx, cis, cjs = split_common_prefix(ci, cj)
             if ej in cis and conditions_can_coexist(cis, cjs):
-                # special case: it's fine to have circular conditions
-                # like a? ( b ) b? ( a ) since the latter will only
-                # occur if b is already true, so the former will not
-                # change anything
-                if ei in cjs:
-                    continue
-
                 # test if enabling cj would also cause ei to happen
                 # note: this is unreliable for very complex cases
                 if not condition_can_occur([ei], flats, cj, False):
