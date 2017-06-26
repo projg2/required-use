@@ -593,7 +593,6 @@ class SelfTests(unittest.TestCase):
         verify_back_alteration(flatten3(parse_string(
             'postgres? ( dlz ) berkdb? ( dlz ) mysql? ( dlz !threads ) odbc? ( dlz ) ldap? ( dlz ) gost? ( !libressl ssl ) dnstap? ( threads ) threads? ( caps ) python? ( || ( python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 python_targets_python3_6 ) )')))
 
-        # note: possibly partially a false positive
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'pulseaudio? ( sound ) opengl? ( || ( X sdl wayland ) ) gles? ( || ( X wayland ) ) gles? ( !sdl ) gles? ( egl ) sdl? ( opengl ) wayland? ( egl !opengl gles ) xim? ( X )')))
@@ -618,7 +617,6 @@ class SelfTests(unittest.TestCase):
         verify_back_alteration(flatten3(parse_string(
             'test? ( python ) python? ( python_targets_python2_7 )')))
 
-        # partially a false positive
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
                 'python_targets_python2_7 analog? ( filter ) digital? ( filter analog ) pager? ( filter analog ) qt4? ( filter ) uhd? ( filter analog ) fcd? ( || ( alsa oss ) ) wavelet? ( analog ) wxwidgets? ( filter analog )')))
@@ -679,13 +677,6 @@ class SelfTests(unittest.TestCase):
                 '|| ( cgi mono perl go lua php pypy python python_asyncio python_gevent ruby ) uwsgi_plugins_logcrypto? ( ssl ) uwsgi_plugins_sslrouter? ( ssl ) routing? ( pcre ) uwsgi_plugins_emperor_zeromq? ( zeromq ) uwsgi_plugins_forkptyrouter? ( uwsgi_plugins_corerouter ) uwsgi_plugins_router_xmldir? ( xml ) pypy? ( python_targets_python2_7 ) python? ( || ( python_targets_pypy python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 ) ) python_asyncio? ( python_targets_python3_4 python_gevent ) python_gevent? ( python ) expat? ( xml ) php? ( || ( php_targets_php5-6 php_targets_php7-0 ) )')))
         verify_back_alteration(flatten3(parse_string(
             '|| ( cgi mono perl go lua php pypy python python_asyncio python_gevent ruby ) uwsgi_plugins_logcrypto? ( ssl ) uwsgi_plugins_sslrouter? ( ssl ) routing? ( pcre ) uwsgi_plugins_emperor_zeromq? ( zeromq ) uwsgi_plugins_forkptyrouter? ( uwsgi_plugins_corerouter ) uwsgi_plugins_router_xmldir? ( xml ) pypy? ( python_targets_python2_7 ) python_asyncio? ( python_targets_python3_4 python_gevent ) python_gevent? ( python )  python? ( || ( python_targets_pypy python_targets_python2_7 python_targets_python3_4 python_targets_python3_5 ) ) expat? ( xml ) php? ( || ( php_targets_php5-6 php_targets_php7-0 ) )')))
-
-        # TODO: a false positive? (gui OR cli) is always true
-        self.assertRaises(BackAlterationVerifyError,
-            verify_back_alteration, flatten3(parse_string(
-                '|| ( cli gui ) gui? ( ^^ ( qt4 qt5 ) ) cli? ( ^^ ( qt4 qt5 ) ) feedreader? ( gui ) voip? ( gui )')))
-        verify_back_alteration(flatten3(parse_string(
-            '|| ( cli gui ) ^^ ( qt4 qt5 ) feedreader? ( gui ) voip? ( gui )')))
 
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
@@ -804,8 +795,14 @@ class SelfTests(unittest.TestCase):
         verify_back_alteration(flatten3(parse_string(
             '|| ( keccak scrypt sha256d ) || ( antminer avalon avalonmm bfsb bfx bifury bigpic bitforce bitfury cointerra cpumining drillbit dualminer gridseed hashbuster hashbuster2 hashfast icarus klondike littlefury metabank modminer nanofury opencl proxy twinfury x6500 zeusminer ztex ) adl? ( opencl ) antminer? ( sha256d ) avalon? ( sha256d ) avalonmm? ( sha256d ) bfsb? ( sha256d bitfury ) bfx? ( sha256d bitfury libusb ) bifury? ( sha256d ) bigpic? ( sha256d bitfury ) bitforce? ( sha256d ) drillbit? ( sha256d bitfury ) hashbuster? ( sha256d bitfury ) hashbuster2? ( sha256d bitfury libusb ) littlefury? ( sha256d bitfury ) metabank? ( sha256d bitfury ) nanofury? ( sha256d bitfury ) twinfury? ( bitfury ) bitfury? ( sha256d ) cointerra? ( sha256d ) dualminer? ( || ( sha256d scrypt ) icarus ) gridseed? ( scrypt ) hashfast? ( sha256d ) zeusminer? ( scrypt icarus ) icarus? ( || ( scrypt sha256d ) ) jingtian? ( sha256d ) keccak? ( || ( cpumining opencl proxy ) ) klondike? ( sha256d libusb ) lm_sensors? ( opencl ) minion? ( sha256d ) modminer? ( sha256d ) scrypt? ( || ( cpumining dualminer gridseed opencl proxy zeusminer ) ) sha256d? ( || ( antminer avalon avalonmm bfx bifury bitforce bfsb bigpic bitfury cointerra cpumining drillbit dualminer hashbuster hashbuster2 hashfast icarus jingtian klondike littlefury metabank modminer nanofury opencl proxy rockminer twinfury x6500 ztex ) ) unicode? ( ncurses ) proxy? ( || ( proxy_getwork proxy_stratum ) ) proxy_getwork? ( proxy ) proxy_stratum? ( proxy ) rockminer? ( sha256d ) twinfury? ( sha256d ) x6500? ( sha256d libusb ) ztex? ( sha256d libusb )')))
 
-    def test_back_alteration_weird_case(self):
-        # note: not sure if it's a valid false positive
+    def test_back_alteration_weird_cases(self):
+        # (cli || gui) is always true, so ^^ ( qt4 qt5 ) always happens
+        self.assertRaises(BackAlterationVerifyError,
+            verify_back_alteration, flatten3(parse_string(
+                '|| ( cli gui ) gui? ( ^^ ( qt4 qt5 ) ) cli? ( ^^ ( qt4 qt5 ) ) feedreader? ( gui ) voip? ( gui )')))
+        verify_back_alteration(flatten3(parse_string(
+            '|| ( cli gui ) ^^ ( qt4 qt5 ) feedreader? ( gui ) voip? ( gui )')))
+
         # gles->!sdl; opengl->!sdl->!wayland->X + gles->!wayland->X
         self.assertRaises(BackAlterationVerifyError,
             verify_back_alteration, flatten3(parse_string(
