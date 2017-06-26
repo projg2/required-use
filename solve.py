@@ -9,13 +9,20 @@ from replace_nary import sort_nary
 from to_impl import convert_to_implications
 
 
-def validate_constraint(flags, constraint):
+def validate_constraint(flags, constraint, condition_cache=None):
+    if condition_cache is None:
+        condition_cache = {}
+
     for expr in constraint:
         if isinstance(expr, Flag):
-            if flags[expr.name] != expr.enabled:
+            # cache results for flags used in the implication conditions
+            # by their instances to account for 'common prefixes' when
+            # using the implication form
+            if not condition_cache.setdefault(id(expr),
+                    flags[expr.name] == expr.enabled):
                 return False
         elif isinstance(expr, Implication):
-            if validate_constraint(flags, expr.condition):
+            if validate_constraint(flags, expr.condition, condition_cache):
                 if not validate_constraint(flags, expr.constraint):
                     return False
         elif isinstance(expr, AnyOfOperator):
@@ -47,7 +54,10 @@ class InfiniteLoopError(Exception):
         super(InfiniteLoopError, self).__init__('Constraints cause infinite loop')
 
 
-def apply_solving(flags, constraint, immutable_flags, negate=False):
+def apply_solving(flags, constraint, immutable_flags, negate=False, condition_cache=None):
+    if condition_cache is None:
+        condition_cache = {}
+
     for expr in constraint:
         if isinstance(expr, Flag):
             want = expr.enabled
@@ -57,8 +67,8 @@ def apply_solving(flags, constraint, immutable_flags, negate=False):
                 raise ImmutabilityError(expr.name)
             flags[expr.name] = want
         elif isinstance(expr, Implication):
-            if validate_constraint(flags, expr.condition):
-                apply_solving(flags, expr.constraint, immutable_flags, negate)
+            if validate_constraint(flags, expr.condition, condition_cache):
+                apply_solving(flags, expr.constraint, immutable_flags, negate, condition_cache)
         elif isinstance(expr, AnyOfOperator):
             if not validate_constraint(flags, [expr]):
                 apply_solving(flags, expr.constraint[0:1], immutable_flags, negate)
