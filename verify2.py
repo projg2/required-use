@@ -204,6 +204,56 @@ def main(constraint_str, immutable_str=''):
 
 
 class SelfTests(unittest.TestCase):
+    def test_split_common_prefix(self):
+        flat1 = list(flatten3(parse_string('a? ( b c )')))
+        self.assertEqual(split_common_prefix(flat1[0][0], flat1[1][0]),
+                (flat1[0][0], [], []))
+        flat2 = list(flatten3(parse_string('a? ( b? ( z ) c? ( z ) )')))
+        self.assertEqual(split_common_prefix(flat2[0][0], flat2[1][0]),
+                ([flat2[0][0][0]], [flat2[0][0][1]], [flat2[1][0][1]]))
+        # test for false positives
+        flat3 = list(flatten3(parse_string('a? ( b ) a? ( c )')))
+        self.assertEqual(split_common_prefix(flat3[0][0], flat3[1][0]),
+                ([], [flat2[0][0][0]], [flat2[1][0][0]]))
+
+    def test_conditions_can_coexist(self):
+        self.assertTrue(conditions_can_coexist([], []))
+        self.assertTrue(conditions_can_coexist(
+            list(parse_string('a')), list(parse_string('a'))))
+        self.assertTrue(conditions_can_coexist(
+            list(parse_string('a b c')), list(parse_string('d e f'))))
+        self.assertTrue(conditions_can_coexist(
+            list(parse_string('a b c')), list(parse_string('c !d !e'))))
+        self.assertFalse(conditions_can_coexist(
+            list(parse_string('a b c')), list(parse_string('!c !d !e'))))
+        self.assertTrue(conditions_can_coexist(
+            list(parse_string('a b c')), list(parse_string('a b a b a'))))
+        self.assertTrue(conditions_can_coexist(
+            list(parse_string('a b c')), []))
+        self.assertFalse(conditions_can_coexist(
+            list(parse_string('a b c')), list(parse_string('!a'))))
+        self.assertFalse(conditions_can_coexist(
+            list(parse_string('a b c')), list(parse_string('a !a'))))
+        self.assertFalse(conditions_can_coexist(
+            list(parse_string('a b c')), list(parse_string('c b !a'))))
+
+    def test_test_condition(self):
+        # single condition
+        self.assertTrue(test_condition(parse_string('a'), {'a': True}, False))
+        self.assertTrue(test_condition(parse_string('!a'), {'a': False}, False))
+        self.assertFalse(test_condition(parse_string('1a'), {'a': True}, False))
+        self.assertFalse(test_condition(parse_string('a'), {'a': False}, False))
+        # multiple conditions
+        self.assertTrue(test_condition(parse_string('a b c'),
+            {'a': True, 'b': True, 'c': True}, False))
+        self.assertFalse(test_condition(parse_string('a b c'),
+            {'a': False, 'b': True, 'c': True}, False))
+        self.assertFalse(test_condition(parse_string('a b c'),
+            {'a': True, 'b': True, 'c': False}, False))
+        # fallback bit
+        self.assertTrue(test_condition(parse_string('a'), {}, True))
+        self.assertFalse(test_condition(parse_string('a'), {}, False))
+
     def test_condition_can_occur(self):
         self.assertTrue(condition_can_occur(
             [Flag('a')], flatten3(parse_string('b? ( !a )')), []))
