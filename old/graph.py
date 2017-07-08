@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.insert(0, '..')
 
 from flatten_implications import flatten_implications
 from parser import (parse_string, Flag, Implication, NaryOperator)

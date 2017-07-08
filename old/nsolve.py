@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.insert(0, '..')
 
 from parser import parse_string
 from to_impl import convert_to_implications
