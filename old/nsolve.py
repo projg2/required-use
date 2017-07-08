@@ -3,11 +3,9 @@
 import sys
 sys.path.insert(0, '..')
 
-from parser import parse_string, Implication
-#from to_impl import convert_to_implications
-from to_flat3 import flatten3
+from parser import parse_string
+from to_impl import convert_to_implications
 from toposort import toposort, toposort_flatten
-from validate_ast import validate_ast_passthrough
 
 
 class Cyclic(Exception):
@@ -19,11 +17,7 @@ class NeedTopoSort(Exception):
 
 
 def solve(constraint_str, immutable_flag_str='', print_status=False):
-    #flat = convert_to_implications(constraint_str,immutable_flag_str)
-    flat = []
-    ast = validate_ast_passthrough(parse_string(constraint_str))
-    for x, y in flatten3(ast):
-        flat.append(Implication(x, [y]))
+    flat = convert_to_implications(constraint_str,immutable_flag_str)
     for i in flat:
         i.fill_can_break(flat)
     try:
