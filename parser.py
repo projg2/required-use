@@ -34,7 +34,7 @@ class Implication(object):
     def __init__(self, condition, constraint):
         assert(isinstance(condition, list))
         assert(isinstance(constraint, list))
-        assert(len(constraint) == 1)
+        assert(len(condition) == 1)
 
         self.condition = condition
         self.constraint = constraint
