@@ -7,6 +7,7 @@ from parser import (parse_string, Flag, Implication, AllOfOperator,
         NaryOperator, parse_immutables)
 from sort_nary import immutability_sort, sort_nary
 from to_flat3 import flatten3
+from validate_ast import validate_ast_passthrough
 
 
 def validate_constraint(flags, constraint, condition_cache=None):
@@ -152,8 +153,8 @@ def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
 def print_solutions(constraint_str, immutable_str):
     # sort n-ary expressions
     immutable_flags = parse_immutables(immutable_str)
-    ast = sort_nary(parse_string(constraint_str),
-            immutability_sort(immutable_flags))
+    ast = sort_nary(validate_ast_passthrough(parse_string(constraint_str)),
+            immutability_sort(immutable_str))
     ast = list(ast)
     print(ast)
     print()
