@@ -180,6 +180,14 @@ def verify_back_alteration(flats):
                     raise BackAlterationVerifyError(cj, ej, ci, ei)
 
 
+def verify_all(flats, immutables):
+    flats = list(flats)
+    verify_self_conflicting(flats)
+    verify_immutability(flats, immutables)
+    verify_conflicts(flats)
+    verify_back_alteration(flats)
+
+
 def main(constraint_str, immutable_str=''):
     immutables = parse_immutables(immutable_str)
     ast = sort_nary(validate_ast_passthrough(parse_string(constraint_str)),
