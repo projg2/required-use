@@ -262,5 +262,15 @@ def parse_string(s):
     return parse_tokens(s.split())
 
 
+def parse_immutables(s):
+    ret = {}
+    for x in s.split():
+        if x.startswith('!'):
+            ret[x[1:]] = False
+        else:
+            ret[x] = True
+    return ret
+
+
 if __name__ == '__main__':
     print(repr(list(parse_string(sys.argv[1]))))

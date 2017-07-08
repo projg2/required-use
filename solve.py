@@ -4,7 +4,7 @@ import sys
 
 from parser import (parse_string, Flag, Implication, AllOfOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
-        NaryOperator)
+        NaryOperator, parse_immutables)
 from sort_nary import sort_nary
 from to_flat3 import flatten3
 
@@ -256,16 +256,6 @@ def print_solutions(constraint_str, immutable_str):
     print('max iterations: %d;  unsolvable: %d;  mismatched solutions for transform: %d'
             % (max_iters, unsolvable, mismatched_solutions))
 
-
-
-def parse_immutables(s):
-    ret = {}
-    for x in s.split():
-        if x.startswith('!'):
-            ret[x[1:]] = False
-        else:
-            ret[x] = True
-    return ret
 
 
 def main(constraint_str, immutable_flag_str=''):

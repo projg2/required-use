@@ -2,7 +2,7 @@
 
 from parser import (Flag, Implication, NaryOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
-        AllOfOperator, parse_string)
+        AllOfOperator, parse_string, parse_immutables)
 
 from replace_nary import negate, merge_and_expand_implications, normalize
 
@@ -42,15 +42,6 @@ def to_implication(expr):
         return list(merge_and_expand_implications(r))
     else:
          raise ValueError('Invalid operator in %s'%expr)
-
-def parse_immutables(s):
-    ret = {}
-    for x in s.split():
-        if x.startswith('!'):
-            ret[x[1:]] = False
-        else:
-            ret[x] = True
-    return ret
 
 def convert_to_implications(constraint_str, immutable_flag_str=''):
     cons = list(parse_string(constraint_str))
