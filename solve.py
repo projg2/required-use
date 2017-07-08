@@ -5,7 +5,7 @@ import sys
 from parser import (parse_string, Flag, Implication, AllOfOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
         NaryOperator)
-from replace_nary import sort_nary
+from sort_nary import sort_nary
 from to_flat3 import flatten3
 
 
