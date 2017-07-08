@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-from parser import Flag, Implication, NaryOperator, AllOfOperator
+import sys
+
+from parser import (Flag, Implication, NaryOperator, AllOfOperator,
+        parse_string, parse_immutables)
 
 
 class immutability_sort(object):
@@ -43,3 +46,8 @@ def sort_nary(ast, sort_key):
             yield expr.__class__(constraint)
         else:
             raise ValueError('Unknown AST expr: %s' % expr)
+
+
+if __name__ == '__main__':
+    print(repr(list(sort_nary(parse_string(sys.argv[1]),
+        immutability_sort(parse_immutables(sys.argv[2]))))))
