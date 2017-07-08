@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+sys.path.insert(0, '..')
 
 from parser import (parse_string, Flag, Implication, NaryOperator)
 from replace_nary import replace_nary, replace_allof

@@ -2,6 +2,7 @@
 
 import itertools
 import sys
+sys.path.insert(0, '..')
 
 from parser import (parse_string, Flag, Implication, NaryOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,

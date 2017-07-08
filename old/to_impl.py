@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import sys
+sys.path.insert(0, '..')
+
 from parser import (Flag, Implication, NaryOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
         AllOfOperator, parse_string, parse_immutables)
