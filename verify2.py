@@ -4,8 +4,7 @@ import sys
 import unittest
 
 from parser import parse_string, parse_immutables, Flag
-from sort_nary import sort_nary
-from solve import immutability_sort
+from sort_nary import immutability_sort, sort_nary
 from to_flat3 import flatten3
 from validate_ast import validate_ast_passthrough
 

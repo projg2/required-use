@@ -5,7 +5,7 @@ import sys
 from parser import (parse_string, Flag, Implication, AllOfOperator,
         AnyOfOperator, ExactlyOneOfOperator, AtMostOneOfOperator,
         NaryOperator, parse_immutables)
-from sort_nary import sort_nary
+from sort_nary import immutability_sort, sort_nary
 from to_flat3 import flatten3
 
 
@@ -103,30 +103,6 @@ def get_all_flags(ast):
                 yield x
         for x in get_all_flags(expr.constraint):
             yield x
-
-
-class immutability_sort(object):
-    def __init__(self, immutable_flags):
-        self.immutable_flags = immutable_flags
-
-    def __call__(self, key):
-        # support recurrence into n-ary operators
-        if isinstance(key, NaryOperator):
-            for x in key.constraint:
-                if self(x) != 1:
-                    return self(x)
-            else:
-                return 1
-
-        # forced = 0 [go first]
-        # normal = 1
-        # masked = 2 [go last]
-        if key.name not in self.immutable_flags:
-            return 1
-        if self.immutable_flags[key.name]:
-            return 0
-        else:
-            return 2
 
 
 def do_solving(sorted_flags, inp_flags, ast, immutable_flags, verbose=True):
