@@ -26,6 +26,8 @@ def validate_ast_passthrough(ast):
                     raise ValueError('%s group in %s operator forbidden' % (x.op, expr.op))
                 else:
                     raise NotImplementedError('Unknown AST subexpr: %s' % x)
+            if len(expr.constraint) == 0:
+                raise ValueError('Empty %s group forbidden' % expr.op)
         else:
             raise NotImplementedError('Unknown AST subexpr: %s' % expr)
         yield expr
