@@ -102,19 +102,13 @@ def condition_can_occur(final_condition, prev_flats, flags, allow_undef=True):
     # cache Flag instance testing results to account for common prefixes
     # (avoid retesting them when partial effects may have changed them)
     success_cache = set()
-    prev_cond = []
     for c, e in prev_flats:
         c = list(c)
-        orig_c = list(c)
-        # simpler not to split it since we want only match removed
-        while c and prev_cond:
-            # if we have a common prefix that matches cached success,
-            # strip it
-            if c[0] is prev_cond[0] and id(c[0]) in success_cache:
-                c.pop(0)
-                prev_cond.pop(0)
-            else:
-                break
+        # remove any prefix that matches the success_cache -- this can
+        # only happen if we have a common prefix, so no need to compare
+        # successive entries
+        while c and id(c[0]) in success_cache:
+            del c[0]
 
         # if all conditions evaluate to true (and there are no unmatched
         # flags), the effect will always apply
@@ -126,7 +120,6 @@ def condition_can_occur(final_condition, prev_flats, flags, allow_undef=True):
                 success_cache.add(id(ci))
             # apply the effect if all conditions evaluates to true
             flag_states[e.name] = e.enabled
-        prev_cond = orig_c
 
     # now verify whether our condition still can still evaluate to true
     return test_condition(final_condition, flag_states, allow_undef)
