@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import itertools
 import sys
 
 from parser import (parse_string, Flag, Implication, AllOfOperator,
@@ -181,10 +182,8 @@ def print_solutions(constraint_str, immutable_str):
     max_iters = 0
     unsolvable = 0
     mismatched_solutions = 0
-    for inpv in range(0, 2**no_flags):
-        inp_flags = {}
-        for x in range(0, no_flags):
-            inp_flags[sorted_flags[no_flags-x-1]] = bool(inpv & (2**x))
+    for values in itertools.product((False, True), repeat=no_flags):
+        inp_flags = dict(zip(sorted_flags, values))
 
         skip = False
         for k, v in immutable_flags.items():
