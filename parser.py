@@ -31,10 +31,11 @@ class Flag(object):
 
 
 class Implication(object):
-    def __init__(self, condition, constraint):
+    def __init__(self, condition, constraint, multi_condition=False):
         assert(isinstance(condition, list))
         assert(isinstance(constraint, list))
-        assert(len(condition) == 1)
+        if not multi_condition:
+            assert(len(condition) == 1)
 
         self.condition = condition
         self.constraint = constraint

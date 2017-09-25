@@ -164,7 +164,7 @@ def print_solutions(constraint_str, immutable_str):
     impl_ast = []
     for c, e in flatten3(ast):
         if c:
-            e = Implication(c, [e])
+            e = Implication(c, [e], multi_condition=True)
         impl_ast.append(e)
 
     all_flags = frozenset(x.name for x in get_all_flags(ast))
